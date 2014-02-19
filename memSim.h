@@ -1,7 +1,9 @@
 #pragma once
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <vector>
+#include <stdlib.h>
 
 #define DISK "BACKING_STORE.bin"
 #define BYTE_SIZE 8
