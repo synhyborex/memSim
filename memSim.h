@@ -1,3 +1,7 @@
+#include <iostream>
+
+#define BYTE_SIZE 8
+
 class TLB {
   private:
   public:
