@@ -1,3 +1,10 @@
+#pragma once
+
+#include <string>
+#include <vector>
+
+#define DISK "BACKING_STORE.bin"
+
 class TLB {
   private:
   public:
