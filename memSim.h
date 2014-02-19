@@ -1,5 +1,9 @@
+#pragma once
 #include <iostream>
+#include <string>
+#include <vector>
 
+#define DISK "BACKING_STORE.bin"
 #define BYTE_SIZE 8
 
 class TLB {
