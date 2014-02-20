@@ -41,9 +41,11 @@ class TLBEntry {
     }
     ~TLBEntry(){}
 
-  private:
     unsigned char logicalPage;
     unsigned char physFrame;
+
+  private:
+    
 };
 
 class PageTableEntry {
@@ -55,10 +57,12 @@ class PageTableEntry {
     }
     ~PageTableEntry(){}
 
-  private:
     unsigned char valid;
     unsigned char logicalPage;
     unsigned char physFrame;
+
+  private:
+    
 };
 
 class PhysMemFrame {
@@ -71,8 +75,10 @@ class PhysMemFrame {
       free(frame);
     }
 
-  private:
     unsigned char* frame; //fixed size 256 bytes
+
+  private:
+    
 };
 
 //functions

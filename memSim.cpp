@@ -28,10 +28,8 @@ void initPhysMem(){
     exit(EXIT_FAILURE);
   }
 
-  int firstHalfByte, secondHalfByte;
   unsigned char* nextFrame = (unsigned char*)malloc(PAGE_SIZE*sizeof(char));
   unsigned char nextByte;// = secondHalfByte | (firstHalfByte << 4);
-  int nextValue;
 
   for(int i = 0; i < frames; i++){
     for(int j = 0; j < PAGE_SIZE; j++){
