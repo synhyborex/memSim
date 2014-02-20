@@ -19,6 +19,18 @@
 #define PAGE_TABLE_SIZE 256
 #define PAGE_SIZE 256
 
+class Address {
+  public:
+    Address(int page_num, int offset_num) {
+      page = page_num;
+      offset = offset_num;
+    }
+    ~Address(){}
+  private:
+    int page;
+    int offset;
+};
+
 class TLBEntry {
   public:
     TLBEntry(char logical, char phys){
@@ -75,5 +87,6 @@ extern void addressOps(char* address_file);
 std::vector<TLBEntry*> TLB;
 std::vector<PageTableEntry*> pageTable;
 std::vector<PhysMemFrame*> physMem;
+std::vector<Address*> addresses;
 int frames; //the number of frames in physical memory
 int pra; //the page replacement algorithm

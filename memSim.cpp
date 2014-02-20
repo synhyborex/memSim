@@ -41,6 +41,7 @@ void addressOps(char* address_file) {
     page = (address & 0xFF00) >> BYTE_SIZE;
     offset = address & 0xFF;
     //printf("%d %d %d\n", address, page, offset);
+    addresses.push_back(new Address(page, offset));
   }
 
   fclose(addrs);
