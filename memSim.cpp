@@ -29,7 +29,7 @@ void initPhysMem(){
   }
 
   unsigned char* nextFrame = (unsigned char*)malloc(PAGE_SIZE*sizeof(char));
-  unsigned char nextByte;// = secondHalfByte | (firstHalfByte << 4);
+  unsigned char nextByte;
 
   for(int i = 0; i < frames; i++){
     for(int j = 0; j < PAGE_SIZE; j++){
@@ -37,7 +37,6 @@ void initPhysMem(){
       nextFrame[j] = nextByte;
     }
     physMem.push_back(new PhysMemFrame(nextFrame));
-    //cout << physMem.size() << endl;
   }
   free(nextFrame);
   fclose(disk);
@@ -132,6 +131,15 @@ void parseCommandLine(int argc, char* argv[]) {
       exit(EXIT_FAILURE);
   }
 }
+
+/*void checkPageTable(){
+  for(int i = 0; i < pageTable.size(); i++){
+    if((addresses[0]->page == pageTable[i]->logicalPage) 
+        && pageTable[i]->valid){
+
+    }
+  }
+}*/
 
 int main(int argc, char** argv){
   parseCommandLine(argc, argv);

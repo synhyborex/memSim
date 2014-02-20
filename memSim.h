@@ -5,6 +5,7 @@
 #include <vector>
 #include <stdlib.h>
 #include <cstring>
+#include <cctype>
 
 #define DISK "BACKING_STORE.bin"
 #define BYTE_SIZE 8
@@ -25,11 +26,15 @@ class Address {
       address = addr_num;
       page = page_num;
       offset = offset_num;
+      frame = (unsigned char*)malloc(PAGE_SIZE*sizeof(char));
     }
-    ~Address(){}
+    ~Address(){
+      free(frame);
+    }
     int page;
     int offset;
     int address;
+    unsigned char* frame;
   private:
 };
 
