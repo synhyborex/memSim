@@ -6,6 +6,11 @@ void init(){
   initTLB();
   initPageTable();
   initPhysMem();
+
+  page_hits = 0;
+  page_faults = 0;
+  tlb_hits = 0;
+  tlb_misses = 0;
 }
 
 void initTLB(){
@@ -72,6 +77,8 @@ void printResults() {
     //printf("full address; value; phsymem frame number; content of entire frame;\n");
     index++;
   }
+  page_fault_rate = (float)(page_faults/(page_hits+page_faults));
+  tlb_miss_rate = (float)(tlb_misses/(tlb_hits+tlb_misses));
   printf("Page Faults: %d Page Fault Rate: %f\n", page_faults, page_fault_rate);
   printf("TLB Hits: %d TLB Misses: %d TLB Miss Rate: %f\n", tlb_hits, tlb_misses, tlb_miss_rate);
 }
@@ -132,19 +139,53 @@ void parseCommandLine(int argc, char* argv[]) {
   }
 }
 
-/*void checkPageTable(){
-  for(int i = 0; i < pageTable.size(); i++){
-    if((addresses[0]->page == pageTable[i]->logicalPage) 
-        && pageTable[i]->valid){
+void runAddrs(){
+  for(unsigned int i = 0; i < addresses.size(); i++){
+    if(!checkTLB(addresses[i]->page)){
+      if(!checkPageTable(addresses[i]->page)){
+        //page fault!
+        //need to go to disk
+      }
+      //if found in page table, will be taken care of inside checkPageTable()
+    }
+    //if found in TLB, will be taken care of inside checkTLB()
+  }
+}
 
+bool checkTLB(unsigned char page){
+  for(unsigned int j = 0; j < TLB.size(); j++){
+    if(page == TLB[j]->logicalPage){
+      //TLB hit
+      tlb_hits++;
+      return true;
     }
   }
-}*/
+
+  //leaving for loop means it didn't find a match
+  tlb_misses++;
+  return false;
+}
+
+bool checkPageTable(unsigned char page){
+  for(unsigned int i = 0; i < pageTable.size(); i++){
+    if((page == pageTable[i]->logicalPage)
+        && pageTable[i]->valid){
+      //page table hit
+      page_hits++;
+      return true;
+    }
+  }
+
+  //leaving for loop means it didn't find a match
+  page_faults++;
+  return false;
+}
 
 int main(int argc, char** argv){
   parseCommandLine(argc, argv);
   init();
   addressOps(argv[1]);
+  runAddrs();
   printResults();
   cleanup();
   return 0;
