@@ -19,14 +19,27 @@ void initPageTable(){
 }
 
 void initPhysMem(){
+  //try to open disk for reading
   FILE *disk;
   if((disk = fopen(DISK,"r")) == NULL){
     cout << "Could not read disk. Exiting program." << endl;
     exit(EXIT_FAILURE);
   }
+
+  int firstHalfByte, secondHalfByte;
+  unsigned char* nextFrame = (unsigned char*)malloc(PAGE_SIZE*sizeof(char));
+  unsigned char nextByte;// = secondHalfByte | (firstHalfByte << 4);
+  int nextValue;
+
   for(int i = 0; i < frames; i++){
-    physMem.push_back(new PhysMemFrame());
+    for(int j = 0; j < PAGE_SIZE; j++){
+      fread(&nextByte,1,1,disk);
+      nextFrame[j] = nextByte;
+    }
+    physMem.push_back(new PhysMemFrame(nextFrame));
+    //cout << physMem.size() << endl;
   }
+  free(nextFrame);
   fclose(disk);
 }
 

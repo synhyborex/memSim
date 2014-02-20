@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 #include <stdlib.h>
-#include <string.h>
+#include <cstring>
 
 #define DISK "BACKING_STORE.bin"
 #define BYTE_SIZE 8
@@ -49,8 +49,9 @@ class PageTableEntry {
 
 class PhysMemFrame {
   public:
-    PhysMemFrame(){
+    PhysMemFrame(unsigned char* fr){
       frame = (unsigned char*)malloc(PAGE_SIZE*sizeof(char));
+      memmove(frame,fr,PAGE_SIZE);
     }
     ~PhysMemFrame(){
       free(frame);
