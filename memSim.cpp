@@ -19,15 +19,33 @@ void initPageTable(){
 
 void initPhysMem(){
   for(int i = 0; i < frames; i++){
-    //give 256 bytes per frame
+    physMem.push_back(new PhysMemFrame());
   }
+}
+
+void cleanup(){
+  cleanTLB();
+  cleanPageTable();
+  cleanPhysMem();
+}
+
+void cleanTLB(){
+  for(int i = 0; i < TLB_SIZE; i++)
+    delete TLB[i];
+}
+
+void cleanPageTable(){
+  for(int i = 0; i < PAGE_TABLE_SIZE; i++)
+    delete pageTable[i];
+}
+
+void cleanPhysMem(){
+  for(int i = 0; i < frames; i++)
+    delete physMem[i];
 }
 
 int main(int argc, char** argv){
   //command line parsing
-  FILE *addrs; //address file
-
-  //no FRAMES or PRA
   switch(argc){
     case 2:
       frames = 256;
@@ -56,6 +74,7 @@ int main(int argc, char** argv){
   }
 
   //try to open addresses file
+  FILE *addrs; //address file
   if(((addrs = fopen(argv[1],"r")) == NULL)){
     cout << "Could not open reference sequence file. Exiting program." << endl;
     exit(EXIT_FAILURE);
@@ -72,14 +91,9 @@ int main(int argc, char** argv){
   page = (address & 0xFF00) >> BYTE_SIZE; //get page number
   offset = address & 0xFF; //get offset
 
-
   fclose(addrs);
 
-  //addrs = fopen(ADDRESSES, "r");
-  //fscanf(addrs, "%d", &address);
-
-  //cout << "page number: " << pageNum << "\noffset: " << offset << "\n";
-  //printf("page number:%d offset:%d\n", pageNum, offset);
+  cleanup();
 
   return 0;
 }

@@ -17,6 +17,7 @@
 //sizes for tables
 #define TLB_SIZE 16
 #define PAGE_TABLE_SIZE 256
+#define PAGE_SIZE 256
 
 class TLBEntry {
   public:
@@ -46,19 +47,30 @@ class PageTableEntry {
 
 };
 
-class PhysMemPage {
+class PhysMemFrame {
   public:
+    PhysMemFrame(){
+      frame = (unsigned char*)malloc(PAGE_SIZE*sizeof(char));
+    }
+    ~PhysMemFrame(){
+      free(frame);
+    }
   private:
-    unsigned int page; //need to fix to take 256 bytes
+    unsigned char* frame; //fixed size 256 bytes
 };
 
 //functions
 extern void init();
 extern void initTLB();
 extern void initPageTable();
-extern void initPhysMem(int);
+extern void initPhysMem();
+extern void cleanup();
+extern void cleanTLB();
+extern void cleanPageTable();
+extern void cleanPhysMem();
 
 std::vector<TLBEntry*> TLB;
 std::vector<PageTableEntry*> pageTable;
+std::vector<PhysMemFrame*> physMem;
 int frames; //the number of frames in physical memory
-  int pra; //the page replacement algorithm
+int pra; //the page replacement algorithm
