@@ -40,11 +40,11 @@ class PageTableEntry {
       physFrame = phys;
     }
     ~PageTableEntry(){}
+
   private:
     unsigned char valid;
     unsigned char logicalPage;
     unsigned char physFrame;
-
 };
 
 class PhysMemFrame {
@@ -55,6 +55,7 @@ class PhysMemFrame {
     ~PhysMemFrame(){
       free(frame);
     }
+
   private:
     unsigned char* frame; //fixed size 256 bytes
 };

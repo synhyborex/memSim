@@ -4,7 +4,8 @@ using namespace std;
 
 void init(){
   initTLB();
-  initPageTable();  
+  initPageTable();
+  initPhysMem();  
 }
 
 void initTLB(){
@@ -18,9 +19,15 @@ void initPageTable(){
 }
 
 void initPhysMem(){
+  FILE *disk;
+  if((disk = fopen(DISK,"r")) == NULL){
+    cout << "Could not read disk. Exiting program." << endl;
+    exit(EXIT_FAILURE);
+  }
   for(int i = 0; i < frames; i++){
     physMem.push_back(new PhysMemFrame());
   }
+  fclose(disk);
 }
 
 void cleanup(){
@@ -86,7 +93,7 @@ int main(int argc, char** argv){
   //get address to look for
   int address;
   char page, offset;
-  //will probably need in loop 
+  //will probably need in loop
   fscanf(addrs,"%d",&address);
   page = (address & 0xFF00) >> BYTE_SIZE; //get page number
   offset = address & 0xFF; //get offset
