@@ -54,6 +54,11 @@ class PhysMemPage {
 
 //functions
 extern void init();
+extern void initTLB();
+extern void initPageTable();
+extern void initPhysMem(int);
 
 std::vector<TLBEntry*> TLB;
 std::vector<PageTableEntry*> pageTable;
+int frames; //the number of frames in physical memory
+  int pra; //the page replacement algorithm

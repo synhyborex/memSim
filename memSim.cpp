@@ -3,20 +3,29 @@
 using namespace std;
 
 void init(){
-  //initialize TLB
-  for(int i = 0; i < TLB_SIZE; i++)
-    TLB.push_back(new TLBEntry(0,0));
+  initTLB();
+  initPageTable();  
+}
 
-  //initialize page table
+void initTLB(){
+  for(int i = 0; i < TLB_SIZE; i++)
+    TLB.push_back(new TLBEntry(0,0)); 
+}
+
+void initPageTable(){
   for(int i = 0; i < PAGE_TABLE_SIZE; i++)
     pageTable.push_back(new PageTableEntry(0,0,0));
+}
+
+void initPhysMem(){
+  for(int i = 0; i < frames; i++){
+    //give 256 bytes per frame
+  }
 }
 
 int main(int argc, char** argv){
   //command line parsing
   FILE *addrs; //address file
-  int frames; //the number of frames in physical memory
-  int pra; //the page replacement algorithm
 
   //no FRAMES or PRA
   switch(argc){
