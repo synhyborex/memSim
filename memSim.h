@@ -60,6 +60,7 @@ class PhysMemFrame {
 };
 
 //functions
+extern void parseCommandLine(int argc, char* argv[]);
 extern void init();
 extern void initTLB();
 extern void initPageTable();
