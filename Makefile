@@ -1,3 +1,5 @@
-all: g++ -o memSim memSim.cpp
+all:
+	g++ memSim.c -o memSim -g -Wall
 
-clean: rm memSim
+clean:
+	rm memSim
