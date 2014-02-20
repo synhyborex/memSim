@@ -40,10 +40,8 @@ void addressOps(char* address_file) {
     fscanf(addrs,"%d",&address);
     page = (address & 0xFF00) >> BYTE_SIZE;
     offset = address & 0xFF;
-    //printf("%d %d %d\n", address, page, offset);
-    addresses.push_back(new Address(page, offset));
+    addresses.push_back(new Address(address, page, offset));
   }
-
   fclose(addrs);
 }
 
@@ -54,6 +52,18 @@ FILE* openAddrFile(char* address_file) {
     exit(EXIT_FAILURE);
   }
   return addrs;
+}
+
+void printResults() {
+  unsigned int index = 0;
+  while (index < addresses.size()) {
+    printf("%d %d %d\n", addresses[index]->address, addresses[index]->page,
+      addresses[index]->offset);
+    //printf("full address; value; phsymem frame number; content of entire frame;\n");
+    index++;
+  }
+  printf("Page Faults: %d Page Fault Rate: %f\n", page_faults, page_fault_rate);
+  printf("TLB Hits: %d TLB Misses: %d TLB Miss Rate: %f\n", tlb_hits, tlb_misses, tlb_miss_rate);
 }
 
 void cleanup(){
@@ -116,6 +126,7 @@ int main(int argc, char** argv){
   parseCommandLine(argc, argv);
   init();
   addressOps(argv[1]);
+  printResults();
   cleanup();
   return 0;
 }

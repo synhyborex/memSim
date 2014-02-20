@@ -21,14 +21,16 @@
 
 class Address {
   public:
-    Address(int page_num, int offset_num) {
+    Address(int addr_num, int page_num, int offset_num) {
+      address = addr_num;
       page = page_num;
       offset = offset_num;
     }
     ~Address(){}
-  private:
     int page;
     int offset;
+    int address;
+  private:
 };
 
 class TLBEntry {
@@ -83,6 +85,7 @@ extern void cleanPageTable();
 extern void cleanPhysMem();
 extern FILE* openAddrFile(char* address_file);
 extern void addressOps(char* address_file);
+extern void printResults();
 
 std::vector<TLBEntry*> TLB;
 std::vector<PageTableEntry*> pageTable;
@@ -90,3 +93,8 @@ std::vector<PhysMemFrame*> physMem;
 std::vector<Address*> addresses;
 int frames; //the number of frames in physical memory
 int pra; //the page replacement algorithm
+int page_faults; // total number of page faults
+float page_fault_rate; // percentage page fault rate
+int tlb_hits; // total number of tlb hits
+int tlb_misses; // total number of tlb misses
+float tlb_miss_rate; // percentage tlb misses
