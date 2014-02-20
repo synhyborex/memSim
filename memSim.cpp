@@ -4,12 +4,13 @@ using namespace std;
 
 void init(){
   initTLB();
-  initPageTable();  
+  initPageTable();
+  initPhysMem();
 }
 
 void initTLB(){
   for(int i = 0; i < TLB_SIZE; i++)
-    TLB.push_back(new TLBEntry(0,0)); 
+    TLB.push_back(new TLBEntry(0,0));
 }
 
 void initPageTable(){
@@ -21,6 +22,29 @@ void initPhysMem(){
   for(int i = 0; i < frames; i++){
     physMem.push_back(new PhysMemFrame());
   }
+}
+void addressOps(char* address_file) {
+  int address;
+  char page, offset;
+  //try to open addresses file
+  FILE* addrs = openAddrFile(address_file);
+  //will probably need in loop
+  while (!feof(addrs)) {
+    fscanf(addrs,"%d",&address);
+    page = (address & 0xFF00) >> BYTE_SIZE; //get page number
+    offset = address & 0xFF; //get offset
+  }
+
+  fclose(addrs);
+}
+
+FILE* openAddrFile(char* address_file) {
+  FILE *addrs; //address file
+  if(((addrs = fopen(address_file,"r")) == NULL)){
+    cout << "Could not open reference sequence file. Exiting program." << endl;
+    exit(EXIT_FAILURE);
+  }
+  return addrs;
 }
 
 void cleanup(){
@@ -73,25 +97,10 @@ int main(int argc, char** argv){
       exit(EXIT_FAILURE);
   }
 
-  //try to open addresses file
-  FILE *addrs; //address file
-  if(((addrs = fopen(argv[1],"r")) == NULL)){
-    cout << "Could not open reference sequence file. Exiting program." << endl;
-    exit(EXIT_FAILURE);
-  }
-
   //initialize data structures
   init();
 
-  //get address to look for
-  int address;
-  char page, offset;
-  //will probably need in loop 
-  fscanf(addrs,"%d",&address);
-  page = (address & 0xFF00) >> BYTE_SIZE; //get page number
-  offset = address & 0xFF; //get offset
-
-  fclose(addrs);
+  addressOps(argv[1]);
 
   cleanup();
 

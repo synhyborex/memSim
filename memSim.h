@@ -68,6 +68,8 @@ extern void cleanup();
 extern void cleanTLB();
 extern void cleanPageTable();
 extern void cleanPhysMem();
+extern FILE* openAddrFile(char* address_file);
+extern void addressOps(char* address_file);
 
 std::vector<TLBEntry*> TLB;
 std::vector<PageTableEntry*> pageTable;
