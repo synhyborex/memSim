@@ -26,6 +26,8 @@ class Address {
       address = (unsigned)addr_num;
       page = (unsigned)page_num;
       offset = (unsigned)offset_num;
+      value = 0;
+      frameNum = 0;
       frame = (unsigned char*)malloc(PAGE_SIZE*sizeof(char));
     }
     ~Address(){
@@ -34,6 +36,8 @@ class Address {
     unsigned char page;
     unsigned char offset;
     unsigned int address;
+    signed int value;
+    unsigned int frameNum;
     unsigned char* frame;
   private:
 };
@@ -99,8 +103,8 @@ extern void cleanPhysMem();
 extern FILE* openAddrFile(char* address_file);
 extern void addressOps(char* address_file);
 extern void printResults();
-extern bool checkTLB(unsigned char);
-extern bool checkPageTable(unsigned char);
+extern bool checkTLB(Address*);
+extern bool checkPageTable(Address*);
 
 std::vector<TLBEntry*> TLB;
 std::vector<PageTableEntry*> pageTable;

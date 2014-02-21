@@ -72,8 +72,8 @@ FILE* openAddrFile(char* address_file) {
 void printResults() {
   unsigned int index = 0;
   while (index < addresses.size()) {
-    printf("%d %d %d\n", addresses[index]->address, addresses[index]->page,
-      addresses[index]->offset);
+    printf("%d, %d, %d, %s\n", addresses[index]->address, addresses[index]->value,
+      addresses[index]->frameNum,addresses[index]->frame);
     //printf("full address; value; phsymem frame number; content of entire frame;\n");
     index++;
   }
@@ -141,8 +141,8 @@ void parseCommandLine(int argc, char* argv[]) {
 
 void runAddrs(){
   for(unsigned int i = 0; i < addresses.size(); i++){
-    if(!checkTLB(addresses[i]->page)){
-      if(!checkPageTable(addresses[i]->page)){
+    if(!checkTLB(addresses[i])){
+      if(!checkPageTable(addresses[i])){
         //page fault!
         //need to go to disk
       }
@@ -152,10 +152,16 @@ void runAddrs(){
   }
 }
 
-bool checkTLB(unsigned char page){
-  for(unsigned int j = 0; j < TLB.size(); j++){
-    if(page == TLB[j]->logicalPage){
+bool checkTLB(Address* addr){
+  for(unsigned int i = 0; i < TLB.size(); i++){
+    if(addr->page == TLB[i]->logicalPage){
       //TLB hit
+      //frame number in physical memory
+      addr->frameNum = TLB[i]->physFrame;
+      //get value at the offset in physical memory
+      addr->value = *((physMem[TLB[i]->physFrame]->frame)+addr->offset);
+      //copy the frame over
+      memmove(addr->frame,physMem[TLB[i]->physFrame]->frame,PAGE_SIZE);
       tlb_hits++;
       return true;
     }
@@ -166,11 +172,17 @@ bool checkTLB(unsigned char page){
   return false;
 }
 
-bool checkPageTable(unsigned char page){
+bool checkPageTable(Address* addr){
   for(unsigned int i = 0; i < pageTable.size(); i++){
-    if((page == pageTable[i]->logicalPage)
+    if((addr->page == pageTable[i]->logicalPage)
         && pageTable[i]->valid){
       //page table hit
+      //frame number in physical memory
+      addr->frameNum = pageTable[i]->physFrame;
+      //get value at the offset in physical memory
+      addr->value = *((physMem[pageTable[i]->physFrame]->frame)+addr->offset);
+      //copy the frame over
+      memmove(addr->frame,physMem[pageTable[i]->physFrame]->frame,PAGE_SIZE);
       page_hits++;
       return true;
     }
