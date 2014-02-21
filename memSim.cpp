@@ -15,7 +15,7 @@ void init(){
 
 void initTLB(){
   for(int i = 0; i < TLB_SIZE; i++) {
-    TLB.push_back(new TLBEntry(0,0));
+    TLB.push_back(new TLBEntry(66,0));
   }
 }
 
