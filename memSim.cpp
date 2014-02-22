@@ -4,14 +4,35 @@ using namespace std;
 
 FILE* openAddressFile(char* addressName) {
   FILE *addressFile;
-  if (((addressFile = fopen(addressName,"r")) == NULL)) {
-    cout << "Could not open reference sequence file. Exiting program." << endl;
+  if (!addressFile = fopen(addressName,"r")) {
+    cout << "Invalid reference file." << endl;
     exit(EXIT_FAILURE);
   }
   return addressFile;
 }
 
 void init() {
+  FILE *disk;
+
+  // init physical memory
+  if(!disk = fopen(DISK,"r")) {
+    cout << "Invalid disk location." << endl;
+    exit(EXIT_FAILURE);
+  }
+
+  unsigned char* nextFrame = (unsigned char*)malloc(PAGE_SIZE*sizeof(char));
+  unsigned char nextByte;
+
+  for(int i = 0; i < frames; i++){
+    for(int j = 0; j < PAGE_SIZE; j++){
+      fread(&nextByte,1,1,disk);
+      nextFrame[j] = nextByte;
+    }
+    physMem.push_back(new PhysMemFrame(nextFrame));
+  }
+  free(nextFrame);
+  fclose(disk);
+
   //init tlb
   for(int i = 0; i < TLB_SIZE; i++)
     TLB.push_back(new TLBEntry(0,0)); 
@@ -19,13 +40,13 @@ void init() {
   //init page table
   for(int i = 0; i < PAGE_TABLE_SIZE; i++)
     pageTable.push_back(new PageTableEntry(0,0,0));
-
-  //init physical memory
-  for(int i = 0; i < frames; i++)
-    physMem.push_back(new PhysMemFrame());
 }
 
 void cleanup() {
+  //clean physical memory
+  for(int i = 0; i < frames; i++)
+    delete physMem[i];
+
   //clean tlb
   for(int i = 0; i < TLB_SIZE; i++)
     delete TLB[i];
@@ -33,25 +54,6 @@ void cleanup() {
   //clean page table
   for(int i = 0; i < PAGE_TABLE_SIZE; i++)
     delete pageTable[i];
-
-  //clean physical memory
-  for(int i = 0; i < frames; i++)
-    delete physMem[i];
-}
-
-void addressOps(char* addressName) {
-  unsigned int address;
-  unsigned char page, offset;
-  FILE* addressFile;
-
-  addressFile = openAddressFile(addressName);
-  while (!feof(addressFile)) {
-    fscanf(addressFile, "%d", &address);
-    page = address >> BYTE_SIZE & 0xFF;
-    offset = address & 0xFF;
-    addresses.push_back(new Address(address, page, offset));
-  }
-  fclose(addressFile);
 }
 
 void runAddrs(){
@@ -67,7 +69,9 @@ void runAddrs(){
   }
 }
 
-bool checkTLB(Address* addr){
+bool checkTLB(Address* addr) {
+  bool rtn = false;
+
   for(unsigned int i = 0; i < TLB.size(); i++){
     if(addr->page == TLB[i]->logicalPage){
       //TLB hit
@@ -78,16 +82,18 @@ bool checkTLB(Address* addr){
       //copy the frame over
       memmove(addr->frame,physMem[TLB[i]->physFrame]->frame,PAGE_SIZE);
       tlb_hits++;
-      return true;
+      rtn = true;
     }
   }
 
   //leaving for loop means it didn't find a match
   tlb_misses++;
-  return false;
+  return rtn;
 }
 
-bool checkPageTable(Address* addr){
+bool checkPageTable(Address* addr) {
+  bool rtn = false;
+
   for(unsigned int i = 0; i < pageTable.size(); i++){
     if((addr->page == pageTable[i]->logicalPage)
         && pageTable[i]->valid){
@@ -99,13 +105,13 @@ bool checkPageTable(Address* addr){
       //copy the frame over
       memmove(addr->frame,physMem[pageTable[i]->physFrame]->frame,PAGE_SIZE);
       page_hits++;
-      return true;
+      rtn = true;
     }
   }
 
   //leaving for loop means it didn't find a match
   page_faults++;
-  return false;
+  return rtn;
 }
 
 void print() {
@@ -118,6 +124,10 @@ void print() {
 }
 
 int main(int argc, char** argv) {
+  unsigned int address;
+  unsigned char page, offset;
+  FILE* addressFile;
+
   switch(argc){
     case 2:
       frames = NUM_FRAMES;
@@ -145,8 +155,18 @@ int main(int argc, char** argv) {
       exit(EXIT_SUCCESS);
   }
   init();
-  addressOps(argv[1]);
+  addressFile = openAddressFile(argv[1]);
+
+  while (!feof(addressFile)) {
+    fscanf(addressFile, "%d", &address);
+    page = address >> BYTE_SIZE & 0xFF;
+    offset = address & 0xFF;
+    addresses.push_back(new Address(address, page, offset));
+  }
+  fclose(addressFile);
+
   print();
   cleanup();
+
   return 0;
 }

@@ -90,7 +90,6 @@ class PhysMemFrame {
 extern void init();
 extern void cleanup();
 extern FILE* openAddressFile(char* address_file);
-extern void addressOps(char* address_file);
 extern void print();
 extern void runAddrs();
 extern bool checkTLB(Address*);
