@@ -30,12 +30,41 @@ void cleanup(){
     delete physMem[i];
 }
 
-int main(int argc, char** argv){
-  int address, tlbMiss = 0;
+void addressOps(char* address_file) {
+  int address;
   char page, offset;
-  bool tlbFull = false;
+  FILE* addrs = openAddrFile(address_file);
+  while (!feof(addrs)) {
+    fscanf(addrs,"%d",&address);
+    page = (address & 0xFF00) >> BYTE_SIZE;
+    offset = address & 0xFF;
+    addresses.push_back(new Address(address, page, offset));
+  }
+  fclose(addrs);
+}
 
-  //command line parsing
+FILE* openAddrFile(char* address_file) {
+  FILE *addrs;
+  if (((addrs = fopen(address_file,"r")) == NULL)) {
+    cout << "Could not open reference sequence file. Exiting program." << endl;
+    exit(EXIT_FAILURE);
+  }
+  return addrs;
+}
+
+void printResults() {
+  unsigned int index = 0;
+  while (index < addresses.size()) {
+    printf("%d %d %d\n", addresses[index]->address, addresses[index]->page,
+      addresses[index]->offset);
+    //printf("full address; value; phsymem frame number; content of entire frame;\n");
+    index++;
+  }
+  printf("Page Faults: %d Page Fault Rate: %f\n", page_faults, page_fault_rate);
+  printf("TLB Hits: %d TLB Misses: %d TLB Miss Rate: %f\n", tlb_hits, tlb_misses, tlb_miss_rate);
+}
+
+int main(int argc, char** argv){
   switch(argc){
     case 2:
       frames = NUM_FRAMES;
@@ -62,21 +91,9 @@ int main(int argc, char** argv){
       cout << "Invalid command line input." << endl;
       exit(EXIT_SUCCESS);
   }
-
-  FILE *addressFile;
-  if(((addressFile = fopen(argv[1], "r")) == NULL)){
-    cout << "Could not open address file." << endl;
-    exit(EXIT_SUCCESS);
-  }
-
   init();
-
-  fscanf(addressFile, "%d", &address);
-  page = address >> BYTE_SIZE & MASK;
-  offset = address & MASK;
-
-  fclose(addressFile);
+  addressOps(argv[1]);
+  printResults();
   cleanup();
-
   return 0;
 }
