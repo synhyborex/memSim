@@ -15,7 +15,7 @@ void init(){
 
 void initTLB(){
   for(int i = 0; i < TLB_SIZE; i++) {
-    TLB.push_back(new TLBEntry(66,0));
+    TLB.push_back(new TLBEntry(0,0));
   }
 }
 
@@ -40,6 +40,7 @@ void initPhysMem(){
     for(int j = 0; j < PAGE_SIZE; j++){
       fread(&nextByte,1,1,disk);
       nextFrame[j] = nextByte;
+      //cout << nextFrame[j];
     }
     physMem.push_back(new PhysMemFrame(nextFrame));
   }
@@ -72,8 +73,13 @@ FILE* openAddrFile(char* address_file) {
 void printResults() {
   unsigned int index = 0;
   while (index < addresses.size()) {
-    printf("%d, %d, %d, %s\n", addresses[index]->address, addresses[index]->value,
-      addresses[index]->frameNum,addresses[index]->frame);
+    printf("%d, %d, %d, ", addresses[index]->address, addresses[index]->value,
+      addresses[index]->frameNum);
+    //need to print frame contents
+    /*for(int i = 0; i < PAGE_SIZE; i++){
+      printf("%c",addresses[index]->frame[i]);
+    }*/
+    printf("\n");
     //printf("full address; value; phsymem frame number; content of entire frame;\n");
     index++;
   }
@@ -145,6 +151,28 @@ void runAddrs(){
       if(!checkPageTable(addresses[i])){
         //page fault!
         //need to go to disk
+        FILE *disk;
+        if((disk = fopen(DISK,"r")) == NULL){
+          unsigned char* diskPage = (unsigned char*)malloc(PAGE_SIZE*sizeof(char));
+          //go to page in disk
+          fseek(disk,addresses[i]->page*PAGE_SIZE,SEEK_SET);
+          //read in page
+          char nextByte;
+          for(int a = 0; a < PAGE_SIZE; a++){
+            fread(&nextByte,1,1,disk);
+            //cout << nextByte;
+            diskPage[a] = nextByte;
+            //cout << diskPage[a];
+          }
+          //for(int a = 0; a <)
+          //cout << diskPage << endl;
+          //set frame in address
+          memmove(addresses[i]->frame,diskPage,PAGE_SIZE);
+
+          //need to update TLB and page table
+
+          fclose(disk);
+        }
       }
       //if found in page table, will be taken care of inside checkPageTable()
     }
