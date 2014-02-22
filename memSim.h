@@ -112,7 +112,7 @@ std::vector<Address*> addresses;
 int frames; //the number of frames in physical memory
 int pra; //the page replacement algorithm
 int page_faults; // total number of page faults
-int page_hits;
+int page_hits; // total number of page hits
 float page_fault_rate; // percentage page fault rate
 int tlb_hits; // total number of tlb hits
 int tlb_misses; // total number of tlb misses

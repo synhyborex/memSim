@@ -49,11 +49,12 @@ void addressOps(char* address_file) {
   int address;
   char page, offset;
   FILE* addrs = openAddrFile(address_file);
+  fscanf(addrs,"%d",&address);
   while (!feof(addrs)) {
-    fscanf(addrs,"%d",&address);
     page = (address & 0xFF00) >> BYTE_SIZE;
     offset = address & 0xFF;
     addresses.push_back(new Address(address, page, offset));
+    fscanf(addrs,"%d",&address);
   }
   fclose(addrs);
 }
@@ -103,19 +104,13 @@ void pageFault(int index) {
 bool checkTLB(Address* addr){
   for(unsigned int i = 0; i < TLB.size(); i++){
     if(addr->page == TLB[i]->logicalPage){
-      //TLB hit
-      //frame number in physical memory
       addr->frameNum = TLB[i]->physFrame;
-      //get value at the offset in physical memory
       addr->value = *((physMem[TLB[i]->physFrame]->frame)+addr->offset);
-      //copy the frame over
       memmove(addr->frame,physMem[TLB[i]->physFrame]->frame,PAGE_SIZE);
       tlb_hits++;
       return true;
     }
   }
-
-  //leaving for loop means it didn't find a match
   tlb_misses++;
   return false;
 }
@@ -124,30 +119,28 @@ bool checkPageTable(Address* addr){
   for(unsigned int i = 0; i < pageTable.size(); i++){
     if((addr->page == pageTable[i]->logicalPage)
         && pageTable[i]->valid){
-      //page table hit
-      //frame number in physical memory
       addr->frameNum = pageTable[i]->physFrame;
-      //get value at the offset in physical memory
       addr->value = *((physMem[pageTable[i]->physFrame]->frame)+addr->offset);
-      //copy the frame over
       memmove(addr->frame,physMem[pageTable[i]->physFrame]->frame,PAGE_SIZE);
       page_hits++;
       return true;
     }
   }
-
-  //leaving for loop means it didn't find a match
   page_faults++;
   return false;
 }
 
 
 void printResults() {
+  page_fault_rate = page_faults / (page_faults + page_hits);
+  tlb_miss_rate = tlb_misses / (tlb_hits + tlb_misses);
   unsigned int index = 0;
   while (index < addresses.size()) {
-    printf("%d %d %d\n", addresses[index]->address, addresses[index]->page,
-      addresses[index]->offset);
+    Address* my_addr = addresses[index];
+    //printf("%d %d %d\n", addresses[index]->address, addresses[index]->page,
+    //  addresses[index]->offset);
     //printf("full address; value; phsymem frame number; content of entire frame;\n");
+    printf("%d, %d, %d\n", my_addr->address, my_addr->value, my_addr->frameNum);
     index++;
   }
   printf("Page Faults: %d Page Fault Rate: %f\n", page_faults, page_fault_rate);
