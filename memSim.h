@@ -25,11 +25,17 @@ class Address {
       address = addr_num;
       page = page_num;
       offset = offset_num;
+      value = 0;
+      frameNum = 0;
+      frame = (char*) malloc(PAGE_SIZE*sizeof(char));
     }
     ~Address(){}
     int page;
     int offset;
     int address;
+    int value;
+    int frameNum;
+    char* frame;
   private:
 };
 
@@ -45,7 +51,7 @@ class TLBEntry {
     unsigned char physFrame;
 
   private:
-    
+
 };
 
 class PageTableEntry {
@@ -62,7 +68,7 @@ class PageTableEntry {
     unsigned char physFrame;
 
   private:
-    
+
 };
 
 class PhysMemFrame {
@@ -78,7 +84,7 @@ class PhysMemFrame {
     unsigned char* frame; //fixed size 256 bytes
 
   private:
-    
+
 };
 
 //functions
@@ -93,6 +99,10 @@ extern void cleanPageTable();
 extern void cleanPhysMem();
 extern FILE* openAddrFile(char* address_file);
 extern void addressOps(char* address_file);
+extern void my_run();
+extern bool checkTLB(Address* addr);
+extern bool checkPageTable(Address* addr);
+extern void pageFault(int index);
 extern void printResults();
 
 std::vector<TLBEntry*> TLB;
@@ -102,6 +112,7 @@ std::vector<Address*> addresses;
 int frames; //the number of frames in physical memory
 int pra; //the page replacement algorithm
 int page_faults; // total number of page faults
+int page_hits;
 float page_fault_rate; // percentage page fault rate
 int tlb_hits; // total number of tlb hits
 int tlb_misses; // total number of tlb misses

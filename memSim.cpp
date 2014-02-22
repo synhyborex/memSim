@@ -6,6 +6,10 @@ void init(){
   initTLB();
   initPageTable();
   initPhysMem();
+  page_hits = 0;
+  page_faults = 0;
+  tlb_hits = 0;
+  tlb_misses = 0;
 }
 
 void initTLB(){
@@ -21,7 +25,6 @@ void initPageTable(){
 }
 
 void initPhysMem(){
-  //try to open disk for reading
   FILE *disk;
   if((disk = fopen(DISK,"r")) == NULL){
     cout << "Could not read disk. Exiting program." << endl;
@@ -29,7 +32,7 @@ void initPhysMem(){
   }
 
   unsigned char* nextFrame = (unsigned char*)malloc(PAGE_SIZE*sizeof(char));
-  unsigned char nextByte;// = secondHalfByte | (firstHalfByte << 4);
+  unsigned char nextByte;
 
   for(int i = 0; i < frames; i++){
     for(int j = 0; j < PAGE_SIZE; j++){
@@ -37,7 +40,6 @@ void initPhysMem(){
       nextFrame[j] = nextByte;
     }
     physMem.push_back(new PhysMemFrame(nextFrame));
-    //cout << physMem.size() << endl;
   }
   free(nextFrame);
   fclose(disk);
@@ -64,6 +66,81 @@ FILE* openAddrFile(char* address_file) {
   }
   return addrs;
 }
+
+void my_run() {
+  for (unsigned int i = 0; i < addresses.size(); i++) {
+    if(!checkTLB(addresses[i])){
+      if(!checkPageTable(addresses[i])){
+        pageFault(i);
+      }
+    }
+  }
+}
+
+void pageFault(int index) {
+  FILE *disk;
+  if((disk = fopen(DISK,"r")) == NULL){
+    char* diskPage = (char*)malloc(PAGE_SIZE*sizeof(char));
+    //go to page in disk
+    fseek(disk,addresses[index]->page*PAGE_SIZE,SEEK_SET);
+    //read in page
+    char nextByte;
+    for(int a = 0; a < PAGE_SIZE; a++){
+      fread(&nextByte,1,1,disk);
+      //cout << nextByte;
+      diskPage[a] = nextByte;
+      //cout << diskPage[a];
+    }
+    //for(int a = 0; a <)
+    //cout << diskPage << endl;
+    //set frame in address
+    memmove(addresses[index]->frame,diskPage,PAGE_SIZE);
+    //need to update TLB and page table
+    fclose(disk);
+  }
+}
+
+bool checkTLB(Address* addr){
+  for(unsigned int i = 0; i < TLB.size(); i++){
+    if(addr->page == TLB[i]->logicalPage){
+      //TLB hit
+      //frame number in physical memory
+      addr->frameNum = TLB[i]->physFrame;
+      //get value at the offset in physical memory
+      addr->value = *((physMem[TLB[i]->physFrame]->frame)+addr->offset);
+      //copy the frame over
+      memmove(addr->frame,physMem[TLB[i]->physFrame]->frame,PAGE_SIZE);
+      tlb_hits++;
+      return true;
+    }
+  }
+
+  //leaving for loop means it didn't find a match
+  tlb_misses++;
+  return false;
+}
+
+bool checkPageTable(Address* addr){
+  for(unsigned int i = 0; i < pageTable.size(); i++){
+    if((addr->page == pageTable[i]->logicalPage)
+        && pageTable[i]->valid){
+      //page table hit
+      //frame number in physical memory
+      addr->frameNum = pageTable[i]->physFrame;
+      //get value at the offset in physical memory
+      addr->value = *((physMem[pageTable[i]->physFrame]->frame)+addr->offset);
+      //copy the frame over
+      memmove(addr->frame,physMem[pageTable[i]->physFrame]->frame,PAGE_SIZE);
+      page_hits++;
+      return true;
+    }
+  }
+
+  //leaving for loop means it didn't find a match
+  page_faults++;
+  return false;
+}
+
 
 void printResults() {
   unsigned int index = 0;
@@ -137,6 +214,7 @@ int main(int argc, char** argv){
   parseCommandLine(argc, argv);
   init();
   addressOps(argv[1]);
+  my_run();
   printResults();
   cleanup();
   return 0;
