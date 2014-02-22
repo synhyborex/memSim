@@ -2,7 +2,16 @@
 
 using namespace std;
 
-void init(){
+FILE* openAddressFile(char* addressName) {
+  FILE *addressFile;
+  if (((addressFile = fopen(addressName,"r")) == NULL)) {
+    cout << "Could not open reference sequence file. Exiting program." << endl;
+    exit(EXIT_FAILURE);
+  }
+  return addressFile;
+}
+
+void init() {
   //init tlb
   for(int i = 0; i < TLB_SIZE; i++)
     TLB.push_back(new TLBEntry(0,0)); 
@@ -16,7 +25,7 @@ void init(){
     physMem.push_back(new PhysMemFrame());
 }
 
-void cleanup(){
+void cleanup() {
   //clean tlb
   for(int i = 0; i < TLB_SIZE; i++)
     delete TLB[i];
@@ -30,41 +39,31 @@ void cleanup(){
     delete physMem[i];
 }
 
-void addressOps(char* address_file) {
-  int address;
-  char page, offset;
-  FILE* addrs = openAddrFile(address_file);
-  while (!feof(addrs)) {
-    fscanf(addrs,"%d",&address);
-    page = (address & 0xFF00) >> BYTE_SIZE;
+void addressOps(char* addressName) {
+  unsigned int address;
+  unsigned char page, offset;
+  FILE* addressFile;
+
+  addressFile = openAddressFile(addressName);
+  while (!feof(addressFile)) {
+    fscanf(addressFile, "%d", &address);
+    page = address >> BYTE_SIZE & 0xFF;
     offset = address & 0xFF;
     addresses.push_back(new Address(address, page, offset));
   }
-  fclose(addrs);
+  fclose(addressFile);
 }
 
-FILE* openAddrFile(char* address_file) {
-  FILE *addrs;
-  if (((addrs = fopen(address_file,"r")) == NULL)) {
-    cout << "Could not open reference sequence file. Exiting program." << endl;
-    exit(EXIT_FAILURE);
-  }
-  return addrs;
-}
-
-void printResults() {
-  unsigned int index = 0;
-  while (index < addresses.size()) {
-    printf("%d %d %d\n", addresses[index]->address, addresses[index]->page,
-      addresses[index]->offset);
-    //printf("full address; value; phsymem frame number; content of entire frame;\n");
-    index++;
+void print() {
+  for(int i = 0; i < addresses.size(); i++) {
+    printf("%d %d %d\n", addresses[i]->address, addresses[i]->page,
+      addresses[i]->offset);
   }
   printf("Page Faults: %d Page Fault Rate: %f\n", page_faults, page_fault_rate);
   printf("TLB Hits: %d TLB Misses: %d TLB Miss Rate: %f\n", tlb_hits, tlb_misses, tlb_miss_rate);
 }
 
-int main(int argc, char** argv){
+int main(int argc, char** argv) {
   switch(argc){
     case 2:
       frames = NUM_FRAMES;
@@ -93,11 +92,7 @@ int main(int argc, char** argv){
   }
   init();
   addressOps(argv[1]);
-  printResults();
+  print();
   cleanup();
   return 0;
 }
-
-/*
-Testing out some stuff!
-*/

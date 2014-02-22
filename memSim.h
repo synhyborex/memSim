@@ -23,15 +23,18 @@
 
 class Address {
   public:
+    int page;
+    int offset;
+    int address;
+
     Address(int addr_num, int page_num, int offset_num) {
       address = addr_num;
       page = page_num;
       offset = offset_num;
     }
-    ~Address(){}
-    int page;
-    int offset;
-    int address;
+    
+    ~Address() {}
+
   private:
 };
 
@@ -40,11 +43,12 @@ class TLBEntry {
     unsigned char logicalPage;
     unsigned char physFrame;
 
-    TLBEntry(char logical, char phys){
+    TLBEntry(char logical, char phys) {
       logicalPage = logical;
       physFrame = phys;
     }
-    ~TLBEntry(){}
+
+    ~TLBEntry() {}
 
   private:
 };
@@ -55,12 +59,13 @@ class PageTableEntry {
     unsigned char logicalPage;
     unsigned char physFrame;
 
-    PageTableEntry(char logical, char phys){
+    PageTableEntry(char logical, char phys) {
       valid = false;
       logicalPage = logical;
       physFrame = phys;
     }
-    ~PageTableEntry(){}
+
+    ~PageTableEntry() {}
 
   private:
 };
@@ -69,11 +74,12 @@ class PhysMemFrame {
   public:
     unsigned char* frame;
 
-    PhysMemFrame(unsigned char* fr){
+    PhysMemFrame(unsigned char* fr) {
       frame = (unsigned char*)malloc(PAGE_SIZE*sizeof(char));
       memmove(frame,fr,PAGE_SIZE);
     }
-    ~PhysMemFrame(){
+
+    ~PhysMemFrame() {
       free(frame);
     }
 
@@ -83,9 +89,9 @@ class PhysMemFrame {
 //functions
 extern void init();
 extern void cleanup();
-extern FILE* openAddrFile(char* address_file);
+extern FILE* openAddressFile(char* address_file);
 extern void addressOps(char* address_file);
-extern void printResults();
+extern void print();
 
 std::vector<TLBEntry*> TLB;
 std::vector<PageTableEntry*> pageTable;
