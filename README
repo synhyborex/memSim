@@ -8,6 +8,3 @@ Based on your example addresses2-correct.txt, I assume that the physical memory 
   the frame number (in this case the index in the physical memory vector).
   addresses-correct.txt had this value represented as the frame number plus the offset.
   (ie: a frame number of 0 plus an offset of 20 would print 20).
-
-Also page fault rate is assumed to be based on number of page faults over page faults and page hits.
-  It is not calculated based on the number of tlb hits.

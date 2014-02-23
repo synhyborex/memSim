@@ -352,7 +352,7 @@ void printAddress(Address* my_addr) {
 void printResults() {
   unsigned int index = 0;
 
-  page_fault_rate = ((float) page_faults) / (float)(page_faults + page_hits);
+  page_fault_rate = ((float) page_faults) / (float)(page_faults + page_hits + tlb_hits);
   tlb_miss_rate = ((float) tlb_misses) / (float)(tlb_hits + tlb_misses);
 
   while (index < addresses.size()) {
