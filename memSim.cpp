@@ -342,7 +342,7 @@ bool isInPageTable(Address* addr) {
 }
 
 void printAddress(Address* my_addr) {
-  printf("%d, %d, %d, ", my_addr->address, my_addr->value, my_addr->frame_index*PAGE_SIZE+my_addr->offset);
+  printf("%d, %d, %d, ", my_addr->address, my_addr->value, my_addr->frame_index);
   for (int i = 0; i < PAGE_SIZE; i++) {
     printf("%x", (int) (*(unsigned char*) &my_addr->frame[i]));
   }
