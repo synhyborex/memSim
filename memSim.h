@@ -47,11 +47,13 @@ class TLBEntry {
     TLBEntry(char logical, char phys){
       logicalPage = logical;
       physFrame = phys;
+      age = -1;
     }
     ~TLBEntry(){}
 
     unsigned char logicalPage;
     unsigned char physFrame;
+    int age;
 };
 
 class PageTableEntry {
@@ -60,12 +62,14 @@ class PageTableEntry {
       valid = val;
       logicalPage = logical;
       physFrame = phys;
+      age = -1;
     }
     ~PageTableEntry(){}
 
     unsigned char valid;
     unsigned char logicalPage;
     unsigned char physFrame;
+    int age;
 };
 
 class PhysMemFrame {
@@ -73,37 +77,41 @@ class PhysMemFrame {
     PhysMemFrame(unsigned char* fr){
       frame = (unsigned char*)malloc(PAGE_SIZE*sizeof(char));
       memmove(frame,fr,PAGE_SIZE);
+      age = -1;
     }
     ~PhysMemFrame(){
       free(frame);
     }
 
     unsigned char* frame; //fixed size 256 bytes
+    int age;
 };
 
 //functions
-extern void parseCommandLine(int argc, char* argv[]);
-extern void init();
+extern void parseCommandLine(int,char**);
+extern void init(char*);
 extern void initTLB();
 extern void initPageTable();
 extern void initPhysMem();
+extern FILE* openAddrFile(char*);
+extern void getAddrsFromFile(char*);
 extern void cleanup();
+extern void cleanAddrs();
 extern void cleanTLB();
 extern void cleanPageTable();
 extern void cleanPhysMem();
-extern FILE* openAddrFile(char* address_file);
-extern void addressOps(char* address_file);
-extern void my_run();
-extern bool checkTLB(Address* addr);
-extern bool checkPageTable(Address* addr);
-extern void pageFault(int index);
-extern void updatePageTable(Address* addr);
-extern void updateTLB(Address* addr);
-extern TLBEntry* getTLBEntry();
-extern PageTableEntry* getPageTableEntry();
+extern bool checkTLB(Address*);
+extern bool checkPageTable(Address*);
+extern void handlePageFault(Address*);
+extern int updatePhysMem(Address*);
+extern void updatePageTable(Address*,int);
+extern void updateTLB(Address*,int);
 extern void printResults();
 extern bool checkTLB(Address*);
 extern bool checkPageTable(Address*);
+extern void ageTLB();
+extern void agePageTable();
+extern void agePhysMem();
 
 std::vector<TLBEntry*> TLB;
 std::vector<PageTableEntry*> pageTable;
@@ -111,9 +119,9 @@ std::vector<PhysMemFrame*> physMem;
 std::vector<Address*> addresses;
 int frames; //the number of frames in physical memory
 int pra; //the page replacement algorithm
-int page_hits; //number of page table hits
-int page_faults; // total number of page faults
+float page_hits; //number of page table hits
+float page_faults; // total number of page faults
 float page_fault_rate; // percentage page fault rate
-int tlb_hits; // total number of tlb hits
-int tlb_misses; // total number of tlb misses
+float tlb_hits; // total number of tlb hits
+float tlb_misses; // total number of tlb misses
 float tlb_miss_rate; // percentage tlb misses
