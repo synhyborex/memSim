@@ -27,7 +27,7 @@ class Address {
       offset = offset_num;
       value = 0;
       frame_index = 0;
-      frame = (char*) malloc(PAGE_SIZE*sizeof(char));
+      frame = (unsigned char*) malloc(PAGE_SIZE*sizeof(char));
     }
     ~Address(){
       free(frame);
@@ -38,7 +38,7 @@ class Address {
     unsigned int address;
     int value;
     int frame_index;
-    char* frame;
+    unsigned char* frame;
 };
 
 class TLBEntry {
@@ -76,32 +76,32 @@ class PhysMemFrame {
     PhysMemFrame(unsigned char* fr){
       frame = (unsigned char*)malloc(PAGE_SIZE*sizeof(char));
       memmove(frame,fr,PAGE_SIZE);
-      priority = 0;
+      priority = -1;
     }
     ~PhysMemFrame(){
       free(frame);
     }
 
     unsigned char* frame; //fixed size 256 bytes
-    unsigned int priority;
+    int priority;
 };
 
-extern void parseCommandLine(int argc, char* argv[]);
-extern void init();
-extern void initTLB();
-extern void initPageTable();
-extern void initPhysMem();
-extern void clean();
-extern FILE* openAddrFile(char* address_file);
-extern void fillAddresses(char* address_file);
-extern void lookupAddress();
-extern bool isInTLB(Address* addr);
-extern bool isInPageTable(Address* addr);
-extern void pageFault(int index);
-extern void updatePageTable(Address* addr);
-extern void updateTLB(Address* addr);
-extern TLBEntry* getTLBEntry();
-extern PageTableEntry* getPageTableEntry();
+extern void parseCommandLine(int argc, char* argv[]); // read command line args
+extern void init(); // allocate memory
+extern void initPhysMem(); // allocate physical memory
+extern void clean(); // free memory
+extern FILE* openAddrFile(char* address_file); // open address file
+extern void fillAddresses(char* address_file); // parse address file
+extern void lookupAddress();  // check for address in existing entry
+extern bool isInTLB(Address* addr);  // check for address in existing entry
+extern bool isInPageTable(Address* addr); // check for address in existing entry
+extern void pageFault(int index); // handle page faults
+extern void updatePageTable(Address* addr); // insert address into page table
+extern void updateTLB(Address* addr); // insert address into tlb
+extern void updatePhysMem(Address* addr); // insert address into phys mem
+extern int getPhysMemFrame(); // returns index of the phys mem frame
+extern TLBEntry* getTLBEntry(); // use pru to get next entry
+extern PageTableEntry* getPageTableEntry(); // use pru to get next entry
 extern void printAddress(Address* my_addr);
 extern void printResults();
 

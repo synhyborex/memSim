@@ -3,25 +3,17 @@
 using namespace std;
 
 void init() {
-  initTLB();
-  initPageTable();
   initPhysMem();
+  for (int i = 0; i < PAGE_TABLE_SIZE; i++) {
+    pageTable.push_back(new PageTableEntry(0, 0, 0));
+  }
+  for (int i = 0; i < TLB_SIZE; i++) {
+    TLB.push_back(new TLBEntry(0, 0));
+  }
   page_hits = 0;
   page_faults = 0;
   tlb_hits = 0;
   tlb_misses = 0;
-}
-
-void initTLB() {
-  for (int i = 0; i < TLB_SIZE; i++) {
-    TLB.push_back(new TLBEntry(0, 0));
-  }
-}
-
-void initPageTable() {
-  for (int i = 0; i < PAGE_TABLE_SIZE; i++) {
-    pageTable.push_back(new PageTableEntry(0, 0, 0));
-  }
 }
 
 void initPhysMem() {
@@ -79,6 +71,10 @@ void lookupAddress() {
     for (unsigned int i = 0; i < pageTable.size(); i++) {
       pageTable[i]->priority++;
     }
+    for (unsigned int i = 0; i < physMem.size(); i++) {
+      if (physMem[i]->priority >= 0)
+        physMem[i]->priority++;
+    }
   }
 }
 
@@ -96,10 +92,37 @@ void pageFault(int index) {
     memmove(addr->frame, page, PAGE_SIZE);
     addr->value = page[addr->offset];
 
+    updatePhysMem(addr);
     updatePageTable(addr);
     updateTLB(addr);
     fclose(disk);
   }
+}
+
+void updatePhysMem(Address* addr) {
+  unsigned int frame_index = getPhysMemFrame();
+  PhysMemFrame* frame = physMem[frame_index];
+  addr->frame_index = frame_index;
+  //addr->frame = frame->frame;
+  frame->priority = 0;
+}
+
+int getPhysMemFrame() {
+  unsigned int i = 0;
+  while (i < physMem.size() && physMem[i]->priority >= 0) {
+    i++;
+  }
+  if (i == physMem.size()) {
+    int removed = 0;
+    int high_priority = 0;
+    for (i = 0; i < physMem.size(); i++) {
+      if (physMem[i]->priority > high_priority) {
+        removed = i;
+      }
+    }
+    i = removed;
+  }
+  return i;
 }
 
 TLBEntry* getTLBEntry() {
@@ -111,13 +134,11 @@ TLBEntry* getTLBEntry() {
     int removed = 0;
     unsigned int high_priority = 0;
     for (i = 0; i < TLB.size(); i++) {
-      if(TLB[i]->priority > high_priority) {
+      if (TLB[i]->priority > high_priority) {
         removed = i;
       }
     }
-  }
-  if (pra == LRU) {
-    TLB[i]->priority = 0;
+    i = removed;
   }
   return TLB[i];
 }
@@ -141,9 +162,7 @@ PageTableEntry* getPageTableEntry() {
         removed = i;
       }
     }
-  }
-  if (pra == LRU) {
-    pageTable[i]->priority = 0;
+    i = removed;
   }
   return pageTable[i];
 }
@@ -161,6 +180,9 @@ bool isInTLB(Address* addr) {
       addr->value = *((physMem[TLB[i]->phys_frame]->frame)+addr->offset);
       memmove(addr->frame,physMem[TLB[i]->phys_frame]->frame,PAGE_SIZE);
       tlb_hits++;
+      if (pra == LRU) {
+        TLB[i]->priority = 0;
+      }
       return true;
     }
   }
@@ -176,6 +198,9 @@ bool isInPageTable(Address* addr) {
       addr->value = *((physMem[pageTable[i]->phys_frame]->frame)+addr->offset);
       memmove(addr->frame,physMem[pageTable[i]->phys_frame]->frame,PAGE_SIZE);
       page_hits++;
+      if (pra == LRU) {
+        pageTable[i]->priority = 0;
+      }
       return true;
     }
   }
@@ -187,16 +212,16 @@ void printAddress(Address* my_addr) {
   //printf("%d %d %d\n", my_addr->address, my_addr->page,
   //  my_addr->offset);
   //printf("full address; value; phsymem frame number; content of entire frame;\n");
-  printf("%d, %d, %d, ", my_addr->address, my_addr->value, my_addr->frame_index);
-  //for (int i = 0; i < PAGE_SIZE; i++) {
-  //  printf("%x", (int) (*(unsigned char*) my_addr->frame+i));
-  //}
+  printf("%d, %d, %d, ", my_addr->address, my_addr->value, my_addr->frame_index*PAGE_SIZE+my_addr->offset);
+  for (int i = 0; i < PAGE_SIZE; i++) {
+    printf("%x", (int) (*(unsigned char*) my_addr->frame+i));
+  }
   printf("\n");
 }
 
 void printResults() {
-  page_fault_rate = page_faults / (page_faults + page_hits);
-  tlb_miss_rate = tlb_misses / (tlb_hits + tlb_misses);
+  page_fault_rate = ((float) page_faults) / (float)(page_faults + page_hits);
+  tlb_miss_rate = ((float) tlb_misses) / (float)(tlb_hits + tlb_misses);
   unsigned int index = 0;
   while (index < addresses.size()) {
     printAddress(addresses[index]);

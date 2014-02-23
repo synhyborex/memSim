@@ -1,2 +1,8 @@
 Luke Plewa
+
 This program supports fifo and lru algorithms, but not opt page replacement algorithm.
+
+Based on your example addresses-correct.txt, I assume that the physical memory frame number is equivalent to
+  the frame number (in this case the index in the physical memory vector) plus the offset.
+  ie: a frame index of 0 plus an offset of 20 would print 20.
+
