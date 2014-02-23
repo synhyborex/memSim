@@ -103,7 +103,7 @@ void updatePhysMem(Address* addr) {
   unsigned int frame_index = getPhysMemFrame();
   PhysMemFrame* frame = physMem[frame_index];
   addr->frame_index = frame_index;
-  //addr->frame = frame->frame;
+  frame->frame = addr->frame;
   frame->priority = 0;
 }
 
@@ -209,12 +209,9 @@ bool isInPageTable(Address* addr) {
 }
 
 void printAddress(Address* my_addr) {
-  //printf("%d %d %d\n", my_addr->address, my_addr->page,
-  //  my_addr->offset);
-  //printf("full address; value; phsymem frame number; content of entire frame;\n");
   printf("%d, %d, %d, ", my_addr->address, my_addr->value, my_addr->frame_index*PAGE_SIZE+my_addr->offset);
   for (int i = 0; i < PAGE_SIZE; i++) {
-    printf("%x", (int) (*(unsigned char*) my_addr->frame+i));
+    printf("%x", (int) (*(unsigned char*) &my_addr->frame[i]));
   }
   printf("\n");
 }
