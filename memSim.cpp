@@ -4,7 +4,7 @@ using namespace std;
 
 FILE* openAddressFile(char* addressName) {
   FILE *addressFile;
-  if (!addressFile = fopen(addressName,"r")) {
+  if (!(addressFile = fopen(addressName,"r"))) {
     cout << "Invalid reference file." << endl;
     exit(EXIT_FAILURE);
   }
@@ -15,7 +15,7 @@ void init() {
   FILE *disk;
 
   // init physical memory
-  if(!disk = fopen(DISK,"r")) {
+  if(!(disk = fopen(DISK,"r"))) {
     cout << "Invalid disk location." << endl;
     exit(EXIT_FAILURE);
   }
@@ -59,10 +59,8 @@ void cleanup() {
 void runAddrs(){
   for(unsigned int i = 0; i < addresses.size(); i++){
     if(checkTLB(addresses[i])) {
-
     }
     else if(checkPageTable(addresses[i])) {
-
     }
     else {
 
