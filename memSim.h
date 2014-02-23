@@ -21,7 +21,7 @@
 
 class Address {
   public:
-    Address(int addr_num, int page_num, int offset_num) {
+    Address(int addr_num, unsigned int page_num, unsigned int offset_num) {
       address = addr_num;
       page = page_num;
       offset = offset_num;
@@ -33,9 +33,9 @@ class Address {
       free(frame);
     }
 
-    int page;
-    int offset;
-    int address;
+    unsigned int page;
+    unsigned int offset;
+    unsigned int address;
     int value;
     int frame_index;
     char* frame;

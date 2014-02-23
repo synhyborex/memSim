@@ -47,7 +47,7 @@ void initPhysMem() {
 
 void fillAddresses(char* address_file) {
   int address;
-  char page, offset;
+  unsigned int page, offset;
   FILE* addrs = openAddrFile(address_file);
   while (fscanf(addrs, "%d", &address) > 0 || !feof(addrs)) {
     page = (address & 0xFF00) >> BYTE_SIZE;
@@ -95,6 +95,7 @@ void pageFault(int index) {
     //cout << diskPage << endl;
     //set frame in address
     memmove(addr->frame, diskPage, PAGE_SIZE);
+    addr->value = diskPage[addr->offset];
     updatePageTable(addr);
     updateTLB(addr);
     fclose(disk);
@@ -165,8 +166,8 @@ void printResults() {
   unsigned int index = 0;
   while (index < addresses.size()) {
     Address* my_addr = addresses[index];
-    //printf("%d %d %d\n", addresses[index]->address, addresses[index]->page,
-    //  addresses[index]->offset);
+    //printf("%d %d %d\n", my_addr->address, my_addr->page,
+    //  my_addr->offset);
     //printf("full address; value; phsymem frame number; content of entire frame;\n");
     printf("%d, %d, %d\n", my_addr->address, my_addr->value, my_addr->frame_index);
     index++;
