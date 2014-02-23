@@ -9,12 +9,12 @@
 #define DISK "BACKING_STORE.bin"
 #define BYTE_SIZE 8
 
-//page replacement
+//page replacement algorithm
 #define FIFO 0
 #define LRU 1
 #define OPT 2
 
-//sizes for tables
+//sizes
 #define TLB_SIZE 16
 #define PAGE_TABLE_SIZE 256
 #define PAGE_SIZE 256
@@ -26,7 +26,7 @@ class Address {
       page = page_num;
       offset = offset_num;
       value = 0;
-      frameNum = 0;
+      frame_index = 0;
       frame = (char*) malloc(PAGE_SIZE*sizeof(char));
     }
     ~Address(){
@@ -37,34 +37,34 @@ class Address {
     int offset;
     int address;
     int value;
-    int frameNum;
+    int frame_index;
     char* frame;
 };
 
 class TLBEntry {
   public:
     TLBEntry(char logical, char phys){
-      logicalPage = logical;
-      physFrame = phys;
+      log_page = logical;
+      phys_frame = phys;
     }
     ~TLBEntry(){}
 
-    unsigned char logicalPage;
-    unsigned char physFrame;
+    unsigned char log_page;
+    unsigned char phys_frame;
 };
 
 class PageTableEntry {
   public:
     PageTableEntry(char val, char logical, char phys){
       valid = val;
-      logicalPage = logical;
-      physFrame = phys;
+      log_page = logical;
+      phys_frame = phys;
     }
     ~PageTableEntry(){}
 
     unsigned char valid;
-    unsigned char logicalPage;
-    unsigned char physFrame;
+    unsigned char log_page;
+    unsigned char phys_frame;
 };
 
 class PhysMemFrame {
@@ -80,7 +80,6 @@ class PhysMemFrame {
     unsigned char* frame; //fixed size 256 bytes
 };
 
-//functions
 extern void parseCommandLine(int argc, char* argv[]);
 extern void init();
 extern void initTLB();
@@ -91,8 +90,8 @@ extern void cleanTLB();
 extern void cleanPageTable();
 extern void cleanPhysMem();
 extern FILE* openAddrFile(char* address_file);
-extern void addressOps(char* address_file);
-extern void my_run();
+extern void fillAddresses(char* address_file);
+extern void lookupAddress();
 extern bool checkTLB(Address* addr);
 extern bool checkPageTable(Address* addr);
 extern void pageFault(int index);

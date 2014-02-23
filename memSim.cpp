@@ -14,13 +14,13 @@ void init() {
 
 void initTLB() {
   for (int i = 0; i < TLB_SIZE; i++) {
-    TLB.push_back(new TLBEntry(0,0));
+    TLB.push_back(new TLBEntry(0, 0));
   }
 }
 
 void initPageTable() {
   for (int i = 0; i < PAGE_TABLE_SIZE; i++) {
-    pageTable.push_back(new PageTableEntry(0,0,0));
+    pageTable.push_back(new PageTableEntry(0, 0, 0));
   }
 }
 
@@ -36,7 +36,7 @@ void initPhysMem() {
 
   for (int i = 0; i < frames; i++) {
     for (int j = 0; j < PAGE_SIZE; j++) {
-      fread(&nextByte,1,1,disk);
+      fread(&nextByte, 1, 1, disk);
       nextFrame[j] = nextByte;
     }
     physMem.push_back(new PhysMemFrame(nextFrame));
@@ -45,11 +45,11 @@ void initPhysMem() {
   fclose(disk);
 }
 
-void addressOps(char* address_file) {
+void fillAddresses(char* address_file) {
   int address;
   char page, offset;
   FILE* addrs = openAddrFile(address_file);
-  while (fscanf(addrs, "%d", &address) && !feof(addrs)) {
+  while (fscanf(addrs, "%d", &address) > 0 || !feof(addrs)) {
     page = (address & 0xFF00) >> BYTE_SIZE;
     offset = address & 0xFF;
     addresses.push_back(new Address(address, page, offset));
@@ -66,7 +66,7 @@ FILE* openAddrFile(char* address_file) {
   return addrs;
 }
 
-void my_run() {
+void lookupAddress() {
   for (unsigned int i = 0; i < addresses.size(); i++) {
     if (!checkTLB(addresses[i])) {
       if (!checkPageTable(addresses[i])) {
@@ -82,11 +82,11 @@ void pageFault(int index) {
   if ((disk = fopen(DISK,"r")) == NULL) {
     char* diskPage = (char*)malloc(PAGE_SIZE*sizeof(char));
     //go to page in disk
-    fseek(disk,addr->page*PAGE_SIZE,SEEK_SET);
+    fseek(disk, addr->page*PAGE_SIZE, SEEK_SET);
     //read in page
     char nextByte;
-    for(int a = 0; a < PAGE_SIZE; a++){
-      fread(&nextByte,1,1,disk);
+    for (int a = 0; a < PAGE_SIZE; a++) {
+      fread(&nextByte, 1, 1, disk);
       //cout << nextByte;
       diskPage[a] = nextByte;
       //cout << diskPage[a];
@@ -94,8 +94,7 @@ void pageFault(int index) {
     //for(int a = 0; a <)
     //cout << diskPage << endl;
     //set frame in address
-    memmove(addr->frame,diskPage,PAGE_SIZE);
-    //need to update TLB and page table
+    memmove(addr->frame, diskPage, PAGE_SIZE);
     updatePageTable(addr);
     updateTLB(addr);
     fclose(disk);
@@ -104,7 +103,7 @@ void pageFault(int index) {
 
 TLBEntry* getTLBEntry() {
   int i = 0;
-  while (TLB[i]->logicalPage != 0) {
+  while (TLB[i]->log_page != 0) {
     i++;
   }
   return TLB[i];
@@ -112,13 +111,13 @@ TLBEntry* getTLBEntry() {
 
 void updateTLB(Address* addr) {
   TLBEntry* my_TLB = getTLBEntry();
-  my_TLB->physFrame = addr->frameNum;
-  my_TLB->logicalPage = addr->page;
+  my_TLB->phys_frame = addr->frame_index;
+  my_TLB->log_page = addr->page;
 }
 
 PageTableEntry* getPageTableEntry() {
   int i = 0;
-  while (pageTable[i]->logicalPage != 0) {
+  while (pageTable[i]->log_page != 0) {
     i++;
   }
   return pageTable[i];
@@ -126,16 +125,16 @@ PageTableEntry* getPageTableEntry() {
 
 void updatePageTable(Address* addr) {
   PageTableEntry* my_entry = getPageTableEntry();
-  my_entry->physFrame = addr->frameNum;
-  my_entry->logicalPage = addr->page;
+  my_entry->phys_frame = addr->frame_index;
+  my_entry->log_page = addr->page;
 }
 
 bool checkTLB(Address* addr) {
   for (unsigned int i = 0; i < TLB.size(); i++) {
-    if (addr->page == TLB[i]->logicalPage) {
-      addr->frameNum = TLB[i]->physFrame;
-      addr->value = *((physMem[TLB[i]->physFrame]->frame)+addr->offset);
-      memmove(addr->frame,physMem[TLB[i]->physFrame]->frame,PAGE_SIZE);
+    if (addr->page == TLB[i]->log_page) {
+      addr->frame_index = TLB[i]->phys_frame;
+      addr->value = *((physMem[TLB[i]->phys_frame]->frame)+addr->offset);
+      memmove(addr->frame,physMem[TLB[i]->phys_frame]->frame,PAGE_SIZE);
       tlb_hits++;
       return true;
     }
@@ -146,11 +145,11 @@ bool checkTLB(Address* addr) {
 
 bool checkPageTable(Address* addr) {
   for (unsigned int i = 0; i < pageTable.size(); i++) {
-    if ((addr->page == pageTable[i]->logicalPage)
+    if ((addr->page == pageTable[i]->log_page)
         && pageTable[i]->valid) {
-      addr->frameNum = pageTable[i]->physFrame;
-      addr->value = *((physMem[pageTable[i]->physFrame]->frame)+addr->offset);
-      memmove(addr->frame,physMem[pageTable[i]->physFrame]->frame,PAGE_SIZE);
+      addr->frame_index = pageTable[i]->phys_frame;
+      addr->value = *((physMem[pageTable[i]->phys_frame]->frame)+addr->offset);
+      memmove(addr->frame,physMem[pageTable[i]->phys_frame]->frame,PAGE_SIZE);
       page_hits++;
       return true;
     }
@@ -169,11 +168,11 @@ void printResults() {
     //printf("%d %d %d\n", addresses[index]->address, addresses[index]->page,
     //  addresses[index]->offset);
     //printf("full address; value; phsymem frame number; content of entire frame;\n");
-    printf("%d, %d, %d\n", my_addr->address, my_addr->value, my_addr->frameNum);
+    printf("%d, %d, %d\n", my_addr->address, my_addr->value, my_addr->frame_index);
     index++;
   }
-  printf("Page Faults: %d Page Fault Rate: %f\n", page_faults, page_fault_rate);
-  printf("TLB Hits: %d TLB Misses: %d TLB Miss Rate: %f\n", tlb_hits, tlb_misses, tlb_miss_rate);
+  printf("Page Faults: %d, Page Fault Rate: %f\n", page_faults, page_fault_rate);
+  printf("TLB Hits: %d, TLB Misses: %d, TLB Miss Rate: %f\n", tlb_hits, tlb_misses, tlb_miss_rate);
 }
 
 void cleanup() {
@@ -207,18 +206,18 @@ void parseCommandLine(int argc, char* argv[]) {
       pra = FIFO;
       break;
     case 3:
-      frames = strtol(argv[2],NULL,10);
+      frames = strtol(argv[2], NULL, 10);
       pra = FIFO;
       break;
     case 4:
-      frames = strtol(argv[2],NULL,10);
-      if (!strcmp(argv[3],"fifo")) {
+      frames = strtol(argv[2], NULL, 10);
+      if (!strcmp(argv[3], "fifo")) {
         pra = FIFO;
       }
-      else if (!strcmp(argv[3],"lru")) {
+      else if (!strcmp(argv[3], "lru")) {
         pra = LRU;
       }
-      else if (!strcmp(argv[3],"opt")) {
+      else if (!strcmp(argv[3], "opt")) {
         pra = OPT;
       }
       else {
@@ -227,7 +226,7 @@ void parseCommandLine(int argc, char* argv[]) {
       }
       break;
     default:
-      cout << "usage: memSim <reference-sequence-file.txt> <FRAMES> <PRA>" << endl;
+      cout << "Usage: memSim <reference-sequence-file.txt> <FRAMES> <PRA>" << endl;
       exit(EXIT_FAILURE);
   }
 }
@@ -235,9 +234,8 @@ void parseCommandLine(int argc, char* argv[]) {
 int main(int argc, char** argv) {
   parseCommandLine(argc, argv);
   init();
-  addressOps(argv[1]);
-  my_run();
+  fillAddresses(argv[1]);
+  lookupAddress();
   printResults();
   cleanup();
-  return 0;
 }
