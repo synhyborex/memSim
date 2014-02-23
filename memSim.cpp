@@ -165,10 +165,14 @@ unsigned int getOPTTLB() {
   for (unsigned int i = address_index; i < addresses.size(); i++) {
     for (unsigned int j = 0; j < frames.size(); j++) {
       if (addresses[i]->page == frames[j]) {
-        //frames.erase(frames.begin()+j);
+        frames.erase(frames.begin()+j);
       }
       if (frames.size() == 1) {
-        return frames[0];
+        for (unsigned int i = 0; i < TLB.size(); i++) {
+          if (TLB[i]->log_page == frames[0]) {
+            return i;
+          }
+        }
       }
     }
   }
@@ -176,7 +180,7 @@ unsigned int getOPTTLB() {
 }
 
 unsigned int getOPTPT() {
-  std::vector<unsigned int>frames;
+  std::vector<unsigned int> frames;
   for (unsigned int i = 0; i < pageTable.size(); i++) {
     frames.push_back(pageTable[i]->log_page);
   }
@@ -186,7 +190,11 @@ unsigned int getOPTPT() {
         frames.erase(frames.begin()+j);
       }
       if (frames.size() == 1) {
-        return frames[0];
+        for (unsigned int i = 0; i < pageTable.size(); i++) {
+          if (pageTable[i]->log_page == frames[0]) {
+            return i;
+          }
+        }
       }
     }
   }

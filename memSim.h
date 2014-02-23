@@ -105,7 +105,8 @@ extern PageTableEntry* getPageTableEntry(); // use pru to get next entry
 extern void invalidatePageTable(int index);
 extern void printAddress(Address* my_addr);
 extern void printResults();
-extern unsigned int getOPTTLB(); // pra for tlb
+extern unsigned int getOPTTLB(); // optimal pra for tlb
+extern unsigned int getOPTPT(); // optimal pra for page table
 
 std::vector<TLBEntry*> TLB;
 std::vector<PageTableEntry*> pageTable;
