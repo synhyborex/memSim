@@ -103,11 +103,10 @@ FILE* openAddrFile(char* address_file) {
 }
 
 void lookupAddress() {
+  address_index = 0;
   for (unsigned int i = 0; i < addresses.size(); i++) {
-    if (isInTLB(addresses[i])) {
-    }
-    else if (isInPageTable(addresses[i])) {
-    }
+    if (isInTLB(addresses[i])) { }
+    else if (isInPageTable(addresses[i])) { }
     else {
       pageFault(i);
     }
@@ -122,6 +121,7 @@ void lookupAddress() {
       if (physMem[i]->priority >= 0)
         physMem[i]->priority++;
     }
+    address_index++;
   }
 }
 
@@ -155,6 +155,42 @@ void updatePhysMem(Address* addr) {
   addr->frame_index = frame_index;
   frame->frame = addr->frame;
   frame->priority = 0;
+}
+
+unsigned int getOPTTLB() {
+  std::vector<unsigned int>frames;
+  for (unsigned int i = 0; i < TLB.size(); i++) {
+    frames.push_back(TLB[i]->log_page);
+  }
+  for (unsigned int i = address_index; i < addresses.size(); i++) {
+    for (unsigned int j = 0; j < frames.size(); j++) {
+      if (addresses[i]->page == frames[j]) {
+        //frames.erase(frames.begin()+j);
+      }
+      if (frames.size() == 1) {
+        return frames[0];
+      }
+    }
+  }
+  return 0;
+}
+
+unsigned int getOPTPT() {
+  std::vector<unsigned int>frames;
+  for (unsigned int i = 0; i < pageTable.size(); i++) {
+    frames.push_back(pageTable[i]->log_page);
+  }
+  for (unsigned int i = address_index; i < addresses.size(); i++) {
+    for (unsigned int j = 0; j < frames.size(); j++) {
+      if (addresses[i]->page == frames[j]) {
+        frames.erase(frames.begin()+j);
+      }
+      if (frames.size() == 1) {
+        return frames[0];
+      }
+    }
+  }
+  return 0;
 }
 
 int getPhysMemFrame() {
@@ -194,7 +230,10 @@ TLBEntry* getTLBEntry() {
     i++;
   }
   // have to use page replacement algorithm
-  if (i == TLB.size()) {
+  if (pra == OPT && i == TLB.size()) {
+    i = getOPTTLB();
+  }
+  else if (i == TLB.size()) {
     int removed = 0;
     unsigned int high_priority = 0;
 
@@ -222,7 +261,10 @@ PageTableEntry* getPageTableEntry() {
     i++;
   }
   // have to use page replacement algorithm
-  if (i == pageTable.size()) {
+  if (pra == OPT && i == pageTable.size()) {
+    i = getOPTPT();
+  }
+  else if (i == pageTable.size()) {
     int removed = 0;
     unsigned int high_priority = 0;
 
@@ -247,7 +289,7 @@ void updatePageTable(Address* addr) {
 bool isInTLB(Address* addr) {
   bool inTLB = false;
 
-  for (unsigned int i = 0; i < TLB.size(); i++) {
+  for (unsigned int i = 0; i < TLB.size() && !inTLB; i++) {
     if (addr->page == TLB[i]->log_page) {
       addr->frame_index = TLB[i]->phys_frame;
       addr->value = *((physMem[TLB[i]->phys_frame]->frame)+addr->offset);
@@ -261,14 +303,16 @@ bool isInTLB(Address* addr) {
       inTLB = true;
     }
   }
-  tlb_misses++;
+  if (!inTLB) {
+    tlb_misses++;
+  }
   return inTLB;
 }
 
 bool isInPageTable(Address* addr) {
   bool inPT = false;
 
-  for (unsigned int i = 0; i < pageTable.size(); i++) {
+  for (unsigned int i = 0; i < pageTable.size() && !inPT; i++) {
     if ((addr->page == pageTable[i]->log_page)
         && pageTable[i]->valid) {
       addr->frame_index = pageTable[i]->phys_frame;
@@ -283,7 +327,9 @@ bool isInPageTable(Address* addr) {
       inPT = true;
     }
   }
-  page_faults++;
+  if (!inPT) {
+    page_faults++;
+  }
   return inPT;
 }
 
@@ -300,7 +346,7 @@ void printResults() {
 
   page_fault_rate = ((float) page_faults) / (float)(page_faults + page_hits);
   tlb_miss_rate = ((float) tlb_misses) / (float)(tlb_hits + tlb_misses);
-  
+
   while (index < addresses.size()) {
     printAddress(addresses[index]);
     index++;

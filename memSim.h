@@ -105,6 +105,7 @@ extern PageTableEntry* getPageTableEntry(); // use pru to get next entry
 extern void invalidatePageTable(int index);
 extern void printAddress(Address* my_addr);
 extern void printResults();
+extern unsigned int getOPTTLB(); // pra for tlb
 
 std::vector<TLBEntry*> TLB;
 std::vector<PageTableEntry*> pageTable;
@@ -118,3 +119,4 @@ float page_fault_rate; // percentage page fault rate
 int tlb_hits; // total number of tlb hits
 int tlb_misses; // total number of tlb misses
 float tlb_miss_rate; // percentage tlb misses
+int address_index; // used for opt algorithm

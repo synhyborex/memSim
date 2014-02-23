@@ -1,8 +1,12 @@
-Luke Plewa
+Luke Plewa & Andrew Caddell
 
-This program supports fifo and lru algorithms, but not opt page replacement algorithm.
+This program supports all three page replacement algorithms. The optimal page replacement algorithm
+looks ahead and determines what to replace in the TLB or page table, based on what will be not be used
+for the longest amount of time.
 
 Based on your example addresses-correct.txt, I assume that the physical memory frame number is equivalent to
   the frame number (in this case the index in the physical memory vector) plus the offset.
   ie: a frame index of 0 plus an offset of 20 would print 20.
 
+Also page fault rate is assumed to be based on number of page faults over page faults and page hits.
+  It is not calculated based on the number of tlb hits.
