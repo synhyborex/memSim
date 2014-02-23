@@ -21,23 +21,6 @@
 #define PAGE_SIZE 256
 #define NUM_FRAMES 256
 
-class Address {
-  public:
-    int page;
-    int offset;
-    int address;
-
-    Address(int addr_num, int page_num, int offset_num) {
-      address = addr_num;
-      page = page_num;
-      offset = offset_num;
-    }
-    
-    ~Address() {}
-
-  private:
-};
-
 class TLBEntry {
   public:
     unsigned char logicalPage;
@@ -82,6 +65,25 @@ class PhysMemFrame {
     ~PhysMemFrame() {
       free(frame);
     }
+
+  private:
+};
+
+class Address {
+  public:
+    int page;
+    int offset;
+    int address;
+    int value;
+    int frameNum;
+
+    Address(int addr_num, int page_num, int offset_num) {
+      address = addr_num;
+      page = page_num;
+      offset = offset_num;
+    }
+    
+    ~Address() {}
 
   private:
 };

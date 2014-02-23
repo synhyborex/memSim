@@ -58,15 +58,15 @@ void cleanup() {
 
 void runAddrs(){
   for(unsigned int i = 0; i < addresses.size(); i++){
-    if(!checkTLB(addresses[i])){
-      if(!checkPageTable(addresses[i])){
-        //page fault!
-        //need to go to disk
-      }
-      //if found in page table, will be taken care of inside checkPageTable()
+    if(checkTLB(addresses[i])) {
+
     }
-    //if found in TLB, will be taken care of inside checkTLB()
-  }
+    else if(checkPageTable(addresses[i])) {
+
+    }
+    else {
+
+    }
 }
 
 bool checkTLB(Address* addr) {
@@ -86,7 +86,6 @@ bool checkTLB(Address* addr) {
     }
   }
 
-  //leaving for loop means it didn't find a match
   tlb_misses++;
   return rtn;
 }
@@ -109,15 +108,14 @@ bool checkPageTable(Address* addr) {
     }
   }
 
-  //leaving for loop means it didn't find a match
   page_faults++;
   return rtn;
 }
 
 void print() {
   for(int i = 0; i < addresses.size(); i++) {
-    printf("%d %d %d\n", addresses[i]->address, addresses[i]->page,
-      addresses[i]->offset);
+    printf("%d %d %d\n", addresses[i]->address, addresses[i]->value,
+      addresses[i]->frameNum);
   }
   printf("Page Faults: %d Page Fault Rate: %f\n", page_faults, page_fault_rate);
   printf("TLB Hits: %d TLB Misses: %d TLB Miss Rate: %f\n", tlb_hits, tlb_misses, tlb_miss_rate);
@@ -165,6 +163,7 @@ int main(int argc, char** argv) {
   }
   fclose(addressFile);
 
+  runAddrs();
   print();
   cleanup();
 
