@@ -25,6 +25,8 @@ class TLBEntry {
   public:
     unsigned char logicalPage;
     unsigned char physFrame;
+    unsigned int log_page;
+    unsigned int priority;
 
     TLBEntry(char logical, char phys) {
       logicalPage = logical;
@@ -41,6 +43,8 @@ class PageTableEntry {
     bool valid;
     unsigned char logicalPage;
     unsigned char physFrame;
+    unsigned int log_page;
+    unsigned int priority;
 
     PageTableEntry(char logical, char phys) {
       valid = false;
@@ -71,8 +75,10 @@ class PhysMemFrame {
 
 class Address {
   public:
-    unsigned char page, offset;
-    unsigned int address, frameNum;
+    unsigned char page;
+    unsigned char offset;
+    unsigned int address;
+    unsigned int frameNum;
     int value;
     unsigned char* frame;
 
@@ -102,6 +108,7 @@ std::vector<PhysMemFrame*> physMem;
 std::vector<Address*> addresses;
 int frames; //the number of frames in physical memory
 int pra; //the page replacement algorithm
+int page_hits;
 int page_faults; // total number of page faults
 float page_fault_rate; // percentage page fault rate
 int tlb_hits; // total number of tlb hits

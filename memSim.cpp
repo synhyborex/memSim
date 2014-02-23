@@ -41,7 +41,7 @@ void init() {
 
   //init page table
   for(int i = 0; i < PAGE_TABLE_SIZE; i++)
-    pageTable.push_back(new PageTableEntry(0,0,0));
+    pageTable.push_back(new PageTableEntry(0,0));
 }
 
 void cleanup() {
@@ -101,22 +101,6 @@ bool checkPageTable(Address* addr) {
   return rtn;
 }
 
-void lookupAddress() {
-  for (unsigned int i = 0; i < addresses.size(); i++) {
-    if (!isInTLB(addresses[i])) {
-      if (!isInPageTable(addresses[i])) {
-        pageFault(i);
-      }
-    }
-    for (unsigned int i = 0; i < TLB.size(); i++) {
-      TLB[i]->priority++;
-    }
-    for (unsigned int i = 0; i < pageTable.size(); i++) {
-      pageTable[i]->priority++;
-    }
-  }
-}
-
 TLBEntry* getTLBEntry() {
   unsigned int i = 0;
   while (i < TLB.size() && TLB[i]->log_page != 0) {
@@ -138,9 +122,21 @@ TLBEntry* getTLBEntry() {
 }
 
 PageTableEntry* getPageTableEntry() {
-  int i = 0;
-  while (pageTable[i]->logicalPage != 0) {
+  unsigned int i = 0;
+  while (i < pageTable.size() && pageTable[i]->log_page != 0) {
     i++;
+  }
+  if (i == pageTable.size()) {
+    int removed = 0;
+    unsigned int high_priority = 0;
+    for (i = 0; i < pageTable.size(); i++) {
+      if(pageTable[i]->priority > high_priority) {
+        removed = i;
+      }
+    }
+  }
+  if (pra == LRU) {
+    pageTable[i]->priority = 0;
   }
   return pageTable[i];
 }
@@ -187,6 +183,12 @@ void findAddresses(){
     }
     else {
       pageFaultHandler(i);
+    }
+    for (unsigned int i = 0; i < TLB.size(); i++) {
+      TLB[i]->priority++;
+    }
+    for (unsigned int i = 0; i < pageTable.size(); i++) {
+      pageTable[i]->priority++;
     }
   }
 }
@@ -244,7 +246,7 @@ int main(int argc, char** argv) {
       else{
         cout << "Invalid PRA." << endl;
         //pra = FIFO;
-        ageReplacementAlgorithm = &firstInFirstOut;
+        pageReplacementAlgorithm = &firstInFirstOut;
       }
       break;
 
