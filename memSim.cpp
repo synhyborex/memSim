@@ -68,8 +68,8 @@ FILE* openAddrFile(char* address_file) {
 
 void lookupAddress() {
   for (unsigned int i = 0; i < addresses.size(); i++) {
-    if (!checkTLB(addresses[i])) {
-      if (!checkPageTable(addresses[i])) {
+    if (!isInTLB(addresses[i])) {
+      if (!isInPageTable(addresses[i])) {
         pageFault(i);
       }
     }
@@ -79,23 +79,17 @@ void lookupAddress() {
 void pageFault(int index) {
   FILE *disk;
   Address* addr = addresses[index];
-  if ((disk = fopen(DISK,"r")) == NULL) {
-    char* diskPage = (char*)malloc(PAGE_SIZE*sizeof(char));
-    //go to page in disk
+  if ((disk = fopen(DISK,"r")) != NULL) {
+    char* page = (char*)malloc(PAGE_SIZE*sizeof(char));
     fseek(disk, addr->page*PAGE_SIZE, SEEK_SET);
-    //read in page
     char nextByte;
     for (int a = 0; a < PAGE_SIZE; a++) {
       fread(&nextByte, 1, 1, disk);
-      //cout << nextByte;
-      diskPage[a] = nextByte;
-      //cout << diskPage[a];
+      page[a] = nextByte;
     }
-    //for(int a = 0; a <)
-    //cout << diskPage << endl;
-    //set frame in address
-    memmove(addr->frame, diskPage, PAGE_SIZE);
-    addr->value = diskPage[addr->offset];
+    memmove(addr->frame, page, PAGE_SIZE);
+    addr->value = page[addr->offset];
+
     updatePageTable(addr);
     updateTLB(addr);
     fclose(disk);
@@ -130,7 +124,7 @@ void updatePageTable(Address* addr) {
   my_entry->log_page = addr->page;
 }
 
-bool checkTLB(Address* addr) {
+bool isInTLB(Address* addr) {
   for (unsigned int i = 0; i < TLB.size(); i++) {
     if (addr->page == TLB[i]->log_page) {
       addr->frame_index = TLB[i]->phys_frame;
@@ -144,7 +138,7 @@ bool checkTLB(Address* addr) {
   return false;
 }
 
-bool checkPageTable(Address* addr) {
+bool isInPageTable(Address* addr) {
   for (unsigned int i = 0; i < pageTable.size(); i++) {
     if ((addr->page == pageTable[i]->log_page)
         && pageTable[i]->valid) {
@@ -169,7 +163,11 @@ void printResults() {
     //printf("%d %d %d\n", my_addr->address, my_addr->page,
     //  my_addr->offset);
     //printf("full address; value; phsymem frame number; content of entire frame;\n");
-    printf("%d, %d, %d\n", my_addr->address, my_addr->value, my_addr->frame_index);
+    printf("%d, %d, %d, ", my_addr->address, my_addr->value, my_addr->frame_index);
+    //for (int i = 0; i < PAGE_SIZE; i++) {
+    //  printf("%x", (int) (*(unsigned char*) my_addr->frame+i));
+    //}
+    printf("\n");
     index++;
   }
   printf("Page Faults: %d, Page Fault Rate: %f\n", page_faults, page_fault_rate);
