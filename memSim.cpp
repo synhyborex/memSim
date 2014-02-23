@@ -2,13 +2,15 @@
 
 using namespace std;
 
-FILE* openAddressFile(char* addressName) {
-  FILE *addressFile;
-  if (!(addressFile = fopen(addressName,"r"))) {
-    cout << "Invalid reference file." << endl;
-    exit(EXIT_FAILURE);
-  }
-  return addressFile;
+void leastRecentlyUsed() {
+
+}
+
+void firstInFirstOut() {
+
+}
+
+void optimal() {
 }
 
 void init() {
@@ -56,18 +58,6 @@ void cleanup() {
     delete pageTable[i];
 }
 
-void runAddrs(){
-  for(unsigned int i = 0; i < addresses.size(); i++){
-    if(checkTLB(addresses[i])) {
-    }
-    else if(checkPageTable(addresses[i])) {
-    }
-    else {
-
-    }
-  }
-}
-
 bool checkTLB(Address* addr) {
   bool rtn = false;
 
@@ -111,6 +101,68 @@ bool checkPageTable(Address* addr) {
   return rtn;
 }
 
+TLBEntry* getTLBEntry() {
+  int i = 0;
+  while (TLB[i]->logicalPage != 0) {
+    i++;
+  }
+  return TLB[i];
+}
+
+PageTableEntry* getPageTableEntry() {
+  int i = 0;
+  while (pageTable[i]->logicalPage != 0) {
+    i++;
+  }
+  return pageTable[i];
+}
+
+void updateTLB(Address* addr) {
+  TLBEntry* my_TLB = getTLBEntry();
+  my_TLB->physFrame = addr->frameNum;
+  my_TLB->logicalPage = addr->page;
+}
+
+void updatePageTable(Address* addr) {
+  PageTableEntry* my_entry = getPageTableEntry();
+  my_entry->physFrame = addr->frameNum;
+  my_entry->logicalPage = addr->page;
+}
+
+void pageFaultHandler(int index) {
+  FILE *disk;
+  Address* addr = addresses[index];
+  if ((disk = fopen(DISK,"r")) == NULL) {
+    char* diskPage = (char*)malloc(PAGE_SIZE*sizeof(char));
+    //go to page in disk
+    fseek(disk,addr->page*PAGE_SIZE,SEEK_SET);
+    //read in page
+    char nextByte;
+    for(int a = 0; a < PAGE_SIZE; a++){
+      fread(&nextByte,1,1,disk);
+      diskPage[a] = nextByte;
+    }
+    //set frame in address
+    memmove(addr->frame,diskPage,PAGE_SIZE);
+    //need to update TLB and page table
+    updatePageTable(addr);
+    updateTLB(addr);
+    fclose(disk);
+  }
+}
+
+void findAddresses(){
+  for(unsigned int i = 0; i < addresses.size(); i++){
+    if(checkTLB(addresses[i])) {
+    }
+    else if(checkPageTable(addresses[i])) {
+    }
+    else {
+      pageFaultHandler(i);
+    }
+  }
+}
+
 void print() {
   for(int i = 0; i < addresses.size(); i++) {
     printf("%d, %d, %d\n", addresses[i]->address, addresses[i]->value,
@@ -118,6 +170,15 @@ void print() {
   }
   printf("Page Faults: %d Page Fault Rate: %f\n", page_faults, page_fault_rate);
   printf("TLB Hits: %d TLB Misses: %d TLB Miss Rate: %f\n", tlb_hits, tlb_misses, tlb_miss_rate);
+}
+
+FILE* openAddressFile(char* addressName) {
+  FILE *addressFile;
+  if (!(addressFile = fopen(addressName,"r"))) {
+    cout << "Invalid reference file." << endl;
+    exit(EXIT_FAILURE);
+  }
+  return addressFile;
 }
 
 int main(int argc, char** argv) {
@@ -128,25 +189,34 @@ int main(int argc, char** argv) {
   switch(argc){
     case 2:
       frames = NUM_FRAMES;
-      pra = FIFO;
+      //pra = FIFO;
+      pageReplacementAlgorithm = &firstInFirstOut;
       break;
 
     case 3:
       frames = strtol(argv[2], NULL, 10);
-      pra = FIFO;
+      //pra = FIFO;
+      pageReplacementAlgorithm = &firstInFirstOut;
       break;
 
     case 4:
       frames = strtol(argv[2], NULL, 10);
-      if(!strcmp(argv[3], "fifo"))
-        pra = FIFO;
-      else if(!strcmp(argv[3], "lru"))
-        pra = LRU;
-      else if(!strcmp(argv[3], "opt"))
-        pra = OPT;
+      if(!strcmp(argv[3], "fifo")) {
+        //pra = FIFO;
+        pageReplacementAlgorithm = &firstInFirstOut;
+      }
+      else if(!strcmp(argv[3], "lru")) {
+        //pra = LRU;
+        pageReplacementAlgorithm = &leastRecentlyUsed;
+      }
+      else if(!strcmp(argv[3], "opt")) {
+        //pra = OPT;
+        pageReplacementAlgorithm = &optimal;
+      }
       else{
         cout << "Invalid PRA." << endl;
-        pra = FIFO;
+        //pra = FIFO;
+        ageReplacementAlgorithm = &firstInFirstOut;
       }
       break;
 
@@ -165,7 +235,7 @@ int main(int argc, char** argv) {
   }
   fclose(addressFile);
 
-  runAddrs();
+  findAddresses();
   print();
   cleanup();
 

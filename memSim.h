@@ -107,3 +107,4 @@ float page_fault_rate; // percentage page fault rate
 int tlb_hits; // total number of tlb hits
 int tlb_misses; // total number of tlb misses
 float tlb_miss_rate; // percentage tlb misses
+void (*pageReplacementAlgorithm)(); // pointer to the pra
