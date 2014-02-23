@@ -71,11 +71,10 @@ class PhysMemFrame {
 
 class Address {
   public:
-    int page;
-    int offset;
-    int address;
+    unsigned char page, offset;
+    unsigned int address, frameNum;
     int value;
-    int frameNum;
+    unsigned char* frame;
 
     Address(int addr_num, int page_num, int offset_num) {
       address = addr_num;

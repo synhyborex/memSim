@@ -114,7 +114,7 @@ bool checkPageTable(Address* addr) {
 
 void print() {
   for(int i = 0; i < addresses.size(); i++) {
-    printf("%d %d %d\n", addresses[i]->address, addresses[i]->value,
+    printf("%d, %d, %d\n", addresses[i]->address, addresses[i]->value,
       addresses[i]->frameNum);
   }
   printf("Page Faults: %d Page Fault Rate: %f\n", page_faults, page_fault_rate);
