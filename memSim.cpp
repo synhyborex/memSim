@@ -195,6 +195,7 @@ bool isInTLB(Address* addr) {
       tlb_hits++;
       if (pra == LRU) {
         TLB[i]->priority = 0;
+        physMem[TLB[i]->phys_frame]->priority = 0;
       }
       return true;
     }
@@ -213,6 +214,7 @@ bool isInPageTable(Address* addr) {
       page_hits++;
       if (pra == LRU) {
         pageTable[i]->priority = 0;
+        physMem[pageTable[i]->phys_frame]->priority = 0;
       }
       return true;
     }
