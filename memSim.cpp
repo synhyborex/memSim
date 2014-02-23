@@ -101,10 +101,38 @@ bool checkPageTable(Address* addr) {
   return rtn;
 }
 
+void lookupAddress() {
+  for (unsigned int i = 0; i < addresses.size(); i++) {
+    if (!isInTLB(addresses[i])) {
+      if (!isInPageTable(addresses[i])) {
+        pageFault(i);
+      }
+    }
+    for (unsigned int i = 0; i < TLB.size(); i++) {
+      TLB[i]->priority++;
+    }
+    for (unsigned int i = 0; i < pageTable.size(); i++) {
+      pageTable[i]->priority++;
+    }
+  }
+}
+
 TLBEntry* getTLBEntry() {
-  int i = 0;
-  while (TLB[i]->logicalPage != 0) {
+  unsigned int i = 0;
+  while (i < TLB.size() && TLB[i]->log_page != 0) {
     i++;
+  }
+  if (i == TLB.size()) {
+    int removed = 0;
+    unsigned int high_priority = 0;
+    for (i = 0; i < TLB.size(); i++) {
+      if(TLB[i]->priority > high_priority) {
+        removed = i;
+      }
+    }
+  }
+  if (pra == LRU) {
+    TLB[i]->priority = 0;
   }
   return TLB[i];
 }
