@@ -102,6 +102,7 @@ extern void updatePhysMem(Address* addr); // insert address into phys mem
 extern int getPhysMemFrame(); // returns index of the phys mem frame
 extern TLBEntry* getTLBEntry(); // use pru to get next entry
 extern PageTableEntry* getPageTableEntry(); // use pru to get next entry
+extern void invalidatePageTable(int index);
 extern void printAddress(Address* my_addr);
 extern void printResults();
 

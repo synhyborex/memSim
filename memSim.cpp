@@ -112,6 +112,7 @@ int getPhysMemFrame() {
   while (i < physMem.size() && physMem[i]->priority >= 0) {
     i++;
   }
+  // have to use page replacement algorithm
   if (i == physMem.size()) {
     int removed = 0;
     int high_priority = 0;
@@ -122,12 +123,16 @@ int getPhysMemFrame() {
     }
     i = removed;
   }
+  invalidatePageTable(i);
+  return i;
+}
+
+void invalidatePageTable(int index) {
   for (unsigned int x = 0; x < pageTable.size(); x++) {
-    if (pageTable[x]->phys_frame == i) {
+    if (pageTable[x]->phys_frame == index) {
       pageTable[x]->valid = 0;
     }
   }
-  return i;
 }
 
 TLBEntry* getTLBEntry() {
@@ -135,6 +140,7 @@ TLBEntry* getTLBEntry() {
   while (i < TLB.size() && TLB[i]->log_page != 0) {
     i++;
   }
+  // have to use page replacement algorithm
   if (i == TLB.size()) {
     int removed = 0;
     unsigned int high_priority = 0;
@@ -159,6 +165,7 @@ PageTableEntry* getPageTableEntry() {
   while (i < pageTable.size() && pageTable[i]->log_page != 0) {
     i++;
   }
+  // have to use page replacement algorithm
   if (i == pageTable.size()) {
     int removed = 0;
     unsigned int high_priority = 0;
