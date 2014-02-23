@@ -29,6 +29,7 @@ class Address {
       value = 0;
       frameNum = 0;
       frame = (unsigned char*)malloc(PAGE_SIZE*sizeof(char));
+      timeTillUse = 0;
     }
     ~Address(){
       free(frame);
@@ -39,7 +40,7 @@ class Address {
     signed int value;
     unsigned int frameNum;
     unsigned char* frame;
-  private:
+    unsigned int timeTillUse;
 };
 
 class TLBEntry {
@@ -106,6 +107,7 @@ extern void handlePageFault(Address*);
 extern int updatePhysMem(Address*);
 extern void updatePageTable(Address*,int);
 extern void updateTLB(Address*,int);
+extern void runAddrs();
 extern void printResults();
 extern bool checkTLB(Address*);
 extern bool checkPageTable(Address*);
@@ -113,7 +115,8 @@ extern void ageTLB();
 extern void agePageTable();
 extern void agePhysMem();
 
-std::vector<TLBEntry*> TLB;
+//global variables
+std::vector<TLBEntry*> TLB; //list 
 std::vector<PageTableEntry*> pageTable;
 std::vector<PhysMemFrame*> physMem;
 std::vector<Address*> addresses;

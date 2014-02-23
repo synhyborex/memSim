@@ -2,6 +2,10 @@
 
 using namespace std;
 
+
+/* initialize TLB, page table, and physical memory.
+ * also gets addresses from file that need to be read
+ */
 void init(char* file){
   getAddrsFromFile(file);
   initTLB();
@@ -14,18 +18,21 @@ void init(char* file){
   tlb_misses = 0;
 }
 
+/* initialize TLB */
 void initTLB(){
   for(int i = 0; i < TLB_SIZE; i++){
     TLB.push_back(new TLBEntry(0,0));
   }
 }
 
+/* initialize page table */
 void initPageTable(){
   for(int i = 0; i < PAGE_TABLE_SIZE; i++){
     pageTable.push_back(new PageTableEntry(0,0,0));
   }
 }
 
+/* initialize physical memory */
 void initPhysMem(){
   FILE *disk;
   if((disk = fopen(DISK,"r")) == NULL){
@@ -33,21 +40,23 @@ void initPhysMem(){
     exit(EXIT_FAILURE);
   }
 
+  //the next frame we're putting into memory
   unsigned char* nextFrame = (unsigned char*)malloc(PAGE_SIZE*sizeof(char));
-  unsigned char nextByte;
+  unsigned char nextByte; //the next byte we will read in
 
   for(int i = 0; i < frames; i++){
     for(int j = 0; j < PAGE_SIZE; j++){
       fread(&nextByte,1,1,disk);
       nextFrame[j] = nextByte;
-      //cout << nextFrame[j];
     }
     physMem.push_back(new PhysMemFrame(nextFrame));
   }
+
   free(nextFrame);
   fclose(disk);
 }
 
+/* gets the list of addresses from the address file */
 void getAddrsFromFile(char* address_file){
   unsigned int address;
   unsigned char page, offset;
@@ -58,8 +67,16 @@ void getAddrsFromFile(char* address_file){
     addresses.push_back(new Address(address, page, offset));
   }
   fclose(addrs);
+
+  //how long until each address will be run
+  if(pra == OPT){
+    for(unsigned int i = 0; i < addresses.size(); i++){
+      addresses[i]->timeTillUse = i;
+    }
+  }
 }
 
+/* opens the given address file */
 FILE* openAddrFile(char* address_file){
   FILE *addrs;
   if(((addrs = fopen(address_file,"r")) == NULL)){
@@ -69,6 +86,7 @@ FILE* openAddrFile(char* address_file){
   return addrs;
 }
 
+/* deals with page faults */
 void handlePageFault(Address* addr){
   FILE *disk;
   if((disk = fopen(DISK,"r")) == NULL){
@@ -78,41 +96,55 @@ void handlePageFault(Address* addr){
   char* diskPage = (char*)malloc(PAGE_SIZE*sizeof(char));
   //go to page in disk
   fseek(disk,addr->page*PAGE_SIZE,SEEK_SET);
+  char nextByte; //the next byte we'll read in
   //read in page
-  char nextByte;
   for(int a = 0; a < PAGE_SIZE; a++){
     fread(&nextByte,1,1,disk);
-    //first thing we read is the value we want
     //set next byte of frame
     diskPage[a] = nextByte;
   }
-  //for(int a = 0; a <)
-  //cout << diskPage << endl;
+
   //set frame in address
   memmove(addr->frame,diskPage,PAGE_SIZE);
   addr->value = diskPage[addr->offset];
+
   //need to update TLB and page table
-  int newFrame = 0;
-  newFrame = updatePhysMem(addr);
+  int newFrame = updatePhysMem(addr);
   addr->frameNum = newFrame;
   updatePageTable(addr,newFrame);
   updateTLB(addr,newFrame);
+
   free(diskPage);
   fclose(disk);
 }
 
+/* updates physical memory with the page from disk */
 int updatePhysMem(Address* addr){
-  int high = 0, highIdx = 0;
-  for(unsigned int i = 0; i < physMem.size(); i++){
-    //see if it's unused
-    if(physMem[i]->age == -1){
-      highIdx = i;
-      break;
+  int highIdx = 0;
+  //check replacement algorithm
+  if(pra == OPT){
+    for(unsigned int i = addresses.size()-1; i >= 0 && i < addresses.size(); i--){
+      for(unsigned int j = 0; j < (unsigned)frames; j++){
+        if(addresses[i]->page == pageTable[j]->logicalPage){
+          if(addresses[i]->timeTillUse > (unsigned)frames/2)
+            highIdx = j;
+        }
+      }
     }
-    //if not unused, we have to keep going
-    if(physMem[i]->age > high){
-      high = physMem[i]->age;
-      highIdx = i;
+  }
+  else{
+    int high = 0;
+    for(unsigned int i = 0; i < physMem.size(); i++){
+      //see if it's unused
+      if(physMem[i]->age == -1){
+        highIdx = i;
+        break;
+      }
+      //if not unused, we have to keep going
+      if(physMem[i]->age > high){
+        high = physMem[i]->age;
+        highIdx = i;
+      }
     }
   }
   //replace page with one from disk
@@ -123,18 +155,41 @@ int updatePhysMem(Address* addr){
   return highIdx;
 }
 
+/* updates page table with the new entry in memory */
 void updatePageTable(Address* addr, int physFrame){
-  int high = 0, highIdx = 0;
-  for(unsigned int i = 0; i < pageTable.size(); i++){
-    //see if it's unused
-    if(pageTable[i]->age == -1){
-      highIdx = i;
-      break;
+  int highIdx = 0;
+  //check replacement algorithm
+  if(pra == OPT){
+    for(unsigned int i = addresses.size()-1; i >= 0 && i < addresses.size(); i--){
+      for(unsigned int j = 0; j < PAGE_TABLE_SIZE; j++){
+        if(addresses[i]->page == pageTable[j]->logicalPage){
+          if(addresses[i]->timeTillUse > PAGE_TABLE_SIZE/2)
+            highIdx = j;
+        }
+      }
     }
-    //if not unused, we have to keep going
-    if(pageTable[i]->age > high){
-      high = pageTable[i]->age;
-      highIdx = i;
+  }
+  else{
+    //set invalid bit for all other references to that frame in phys mem
+    for(unsigned int i = 0; i < pageTable.size(); i++){
+      if(pageTable[i]->physFrame == (char)physFrame){
+        pageTable[i]->valid = 0;
+      }
+    }
+
+    //set new entry
+    int high = 0;
+    for(unsigned int i = 0; i < pageTable.size(); i++){
+      //see if it's unused
+      if(pageTable[i]->age == -1){
+        highIdx = i;
+        break;
+      }
+      //if not unused, we have to keep going
+      if(pageTable[i]->age > high){
+        high = pageTable[i]->age;
+        highIdx = i;
+      }
     }
   }
   //replace page with one from disk
@@ -143,27 +198,40 @@ void updatePageTable(Address* addr, int physFrame){
   pageTable[highIdx]->valid = 1;
   //reset age
   pageTable[highIdx]->age = 0;
-
-  //set invalid bit for all other references to that frame in phys mem
-  for(unsigned int i = 0; i < pageTable.size(); i++){
-    if(pageTable[i]->physFrame == (char)physFrame){
-      pageTable[i]->valid = 0;
-    }
-  }
 }
 
+/* updates TLB with new entry from page table */
 void updateTLB(Address* addr, int physFrame){
-  int high = 0, highIdx = 0;
-  for(unsigned int i = 0; i < TLB.size(); i++){
-    //see if it's unused
-    if(TLB[i]->age == -1){
-      highIdx = i;
-      break;
+  int highIdx = 0;
+  //check replacement algorithm
+  if(pra == OPT){
+    //go bottom to top in address list
+    for(unsigned int i = addresses.size()-1; i >= 0 && i < addresses.size(); i--){
+      //go top to bottom in TLB
+      for(unsigned int j = 0; j < TLB_SIZE; j++){
+        //if match, it means not used for a long time
+        if(addresses[i]->page == TLB[j]->logicalPage){
+          if(addresses[i]->timeTillUse > TLB_SIZE/2)
+            highIdx = j;
+        }
+      }
     }
-    //if not unused, we have to keep going
-    if(TLB[i]->age > high){
-      high = TLB[i]->age;
-      highIdx = i;
+  }
+  //FIFO and LRU
+  else{
+    int high = 0;
+    //find index with highest age
+    for(unsigned int i = 0; i < TLB.size(); i++){
+      //see if it's unused
+      if(TLB[i]->age == -1){
+        highIdx = i;
+        break;
+      }
+      //if not unused, we have to keep going
+      if(TLB[i]->age > high){
+        high = TLB[i]->age;
+        highIdx = i;
+      }
     }
   }
   //replace page with one from disk
@@ -173,13 +241,12 @@ void updateTLB(Address* addr, int physFrame){
   TLB[highIdx]->age = 0;
 }
 
+/* checks TLB for address */
 bool checkTLB(Address* addr){
   for(unsigned int i = 0; i < TLB.size(); i++){
     if(addr->page == TLB[i]->logicalPage){
-      //addr->frameNum = 1;
       addr->frameNum = TLB[i]->physFrame;
       addr->value = *((physMem[addr->frameNum]->frame)+addr->offset);
-      //addr->value = -1;
       memmove(addr->frame,physMem[addr->frameNum]->frame,PAGE_SIZE);
       if(pra == LRU){
         TLB[i]->age = 0;
@@ -193,6 +260,7 @@ bool checkTLB(Address* addr){
   return false;
 }
 
+/* checks page table for address */
 bool checkPageTable(Address* addr){
   for(unsigned int i = 0; i < pageTable.size(); i++){
     if((addr->page == pageTable[i]->logicalPage)
@@ -212,22 +280,23 @@ bool checkPageTable(Address* addr){
   return false;
 }
 
+/* prints results for each address in the specified format */
 void printResults(){
   for(unsigned int i = 0; i < addresses.size(); i++){
     Address* addr = addresses[i];
-    //printf("full address; value; phsymem frame number; content of entire frame;\n");
-    printf("%d, %d, %d, ", addr->address, addr->value, PAGE_SIZE*addr->frameNum+addr->offset);
+    printf("%d, %d, %d, ", addr->address, addr->value, addr->frameNum);
     for(int i = 0; i < PAGE_SIZE; i++){
       printf("%x",(int)(*(unsigned char*)(&addr->frame[i])));
     }
     printf("\n");
   }
-  page_fault_rate = (page_faults/(page_hits+page_faults));
+  page_fault_rate = (page_faults/(page_hits+page_faults+tlb_hits));
   tlb_miss_rate = (tlb_misses/(tlb_hits+tlb_misses));
   printf("Page Faults: %.0f Page Fault Rate: %f\n", page_faults, page_fault_rate);
   printf("TLB Hits: %.0f TLB Misses: %.0f TLB Miss Rate: %f\n", tlb_hits, tlb_misses, tlb_miss_rate);
 }
 
+/* cleans up address list, TLB, page table, and physical memory */
 void cleanup(){
   cleanAddrs();
   cleanTLB();
@@ -235,30 +304,35 @@ void cleanup(){
   cleanPhysMem();
 }
 
+/* cleans up address list */
 void cleanAddrs(){
   for(unsigned int i = 0; i < addresses.size(); i++){
     delete addresses[i];
   }
 }
 
+/* cleans up TLB */
 void cleanTLB(){
   for(int i = 0; i < TLB_SIZE; i++) {
     delete TLB[i];
   }
 }
 
+/* cleans up page table */
 void cleanPageTable(){
   for(int i = 0; i < PAGE_TABLE_SIZE; i++) {
     delete pageTable[i];
   }
 }
 
+/* cleans up physical memory */
 void cleanPhysMem(){
   for(int i = 0; i < frames; i++) {
     delete physMem[i];
   }
 }
 
+/* parses the command line input */
 void parseCommandLine(int argc, char* argv[]){
   switch(argc){
     case 2:
@@ -266,11 +340,19 @@ void parseCommandLine(int argc, char* argv[]){
       pra = FIFO;
       break;
     case 3:
-      frames = strtol(argv[2],NULL,10);
+      if(frames > 256 || frames < 0){
+        cout << "Invalid number of frames. Using default value of 256." << endl;
+        frames = 256;
+      }
+      else frames = strtol(argv[2],NULL,10);
       pra = FIFO;
       break;
     case 4:
-      frames = strtol(argv[2],NULL,10);
+      if(frames > 256 || frames < 0){
+        cout << "Invalid number of frames. Using default value of 256." << endl;
+        frames = 256;
+      }
+      else frames = strtol(argv[2],NULL,10);
       if (!strcmp(argv[3],"fifo")) {
         pra = FIFO;
       }
@@ -281,7 +363,7 @@ void parseCommandLine(int argc, char* argv[]){
         pra = OPT;
       }
       else {
-        cout << "Invalid PRA type. Argument treated as not present." << endl;
+        cout << "Invalid PRA type. Using default of FIFO." << endl;
         pra = FIFO;
       }
       break;
@@ -291,6 +373,7 @@ void parseCommandLine(int argc, char* argv[]){
   }
 }
 
+/* ages values in the TLB */
 void ageTLB(){
   for(int i = 0; i < TLB_SIZE; i++) {
     if(TLB[i]->age >= 0) //make sure it has been used
@@ -298,6 +381,7 @@ void ageTLB(){
   }
 }
 
+/* ages values in the page table */
 void agePageTable(){
   for(int i = 0; i < PAGE_TABLE_SIZE; i++) {
     if(pageTable[i]->age >= 0) //make sure it has been used
@@ -305,6 +389,7 @@ void agePageTable(){
   }
 }
 
+/* ages values in physical memory */
 void agePhysMem(){
   for(int i = 0; i < frames; i++) {
     if(physMem[i]->age >= 0) //make sure it has been used
@@ -312,6 +397,7 @@ void agePhysMem(){
   }
 }
 
+/* runs list of addresses through TLB and page table */
 void runAddrs(){
   //update ages
   ageTLB();
@@ -320,6 +406,14 @@ void runAddrs(){
 
   //check addrs
   for(unsigned int i = 0; i < addresses.size(); i++){
+    if(pra == OPT){
+      //everything is now one closer to use
+      for(unsigned int j = 0; j < addresses.size(); j++){
+        addresses[i]->timeTillUse--;
+      }
+    }
+
+    //check TLB and page table
     if(!checkTLB(addresses[i])){
       if(!checkPageTable(addresses[i])){
         //page fault!
