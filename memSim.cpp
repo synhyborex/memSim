@@ -122,6 +122,11 @@ int getPhysMemFrame() {
     }
     i = removed;
   }
+  for (unsigned int x = 0; x < pageTable.size(); x++) {
+    if (pageTable[x]->phys_frame == i) {
+      pageTable[x]->valid = 0;
+    }
+  }
   return i;
 }
 
@@ -171,6 +176,7 @@ void updatePageTable(Address* addr) {
   PageTableEntry* my_entry = getPageTableEntry();
   my_entry->phys_frame = addr->frame_index;
   my_entry->log_page = addr->page;
+  my_entry->valid = 1;
 }
 
 bool isInTLB(Address* addr) {
