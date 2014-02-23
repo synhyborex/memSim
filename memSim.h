@@ -46,11 +46,13 @@ class TLBEntry {
     TLBEntry(char logical, char phys){
       log_page = logical;
       phys_frame = phys;
+      priority = 0;
     }
     ~TLBEntry(){}
 
     unsigned char log_page;
     unsigned char phys_frame;
+    unsigned int priority;
 };
 
 class PageTableEntry {
@@ -59,12 +61,14 @@ class PageTableEntry {
       valid = val;
       log_page = logical;
       phys_frame = phys;
+      priority = 0;
     }
     ~PageTableEntry(){}
 
     unsigned char valid;
     unsigned char log_page;
     unsigned char phys_frame;
+    unsigned int priority;
 };
 
 class PhysMemFrame {
@@ -72,12 +76,14 @@ class PhysMemFrame {
     PhysMemFrame(unsigned char* fr){
       frame = (unsigned char*)malloc(PAGE_SIZE*sizeof(char));
       memmove(frame,fr,PAGE_SIZE);
+      priority = 0;
     }
     ~PhysMemFrame(){
       free(frame);
     }
 
     unsigned char* frame; //fixed size 256 bytes
+    unsigned int priority;
 };
 
 extern void parseCommandLine(int argc, char* argv[]);
@@ -85,10 +91,7 @@ extern void init();
 extern void initTLB();
 extern void initPageTable();
 extern void initPhysMem();
-extern void cleanup();
-extern void cleanTLB();
-extern void cleanPageTable();
-extern void cleanPhysMem();
+extern void clean();
 extern FILE* openAddrFile(char* address_file);
 extern void fillAddresses(char* address_file);
 extern void lookupAddress();
@@ -99,6 +102,7 @@ extern void updatePageTable(Address* addr);
 extern void updateTLB(Address* addr);
 extern TLBEntry* getTLBEntry();
 extern PageTableEntry* getPageTableEntry();
+extern void printAddress(Address* my_addr);
 extern void printResults();
 
 std::vector<TLBEntry*> TLB;

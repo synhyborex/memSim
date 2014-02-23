@@ -73,6 +73,12 @@ void lookupAddress() {
         pageFault(i);
       }
     }
+    for (unsigned int i = 0; i < TLB.size(); i++) {
+      TLB[i]->priority++;
+    }
+    for (unsigned int i = 0; i < pageTable.size(); i++) {
+      pageTable[i]->priority++;
+    }
   }
 }
 
@@ -97,9 +103,21 @@ void pageFault(int index) {
 }
 
 TLBEntry* getTLBEntry() {
-  int i = 0;
-  while (TLB[i]->log_page != 0) {
+  unsigned int i = 0;
+  while (i < TLB.size() && TLB[i]->log_page != 0) {
     i++;
+  }
+  if (i == TLB.size()) {
+    int removed = 0;
+    unsigned int high_priority = 0;
+    for (i = 0; i < TLB.size(); i++) {
+      if(TLB[i]->priority > high_priority) {
+        removed = i;
+      }
+    }
+  }
+  if (pra == LRU) {
+    TLB[i]->priority = 0;
   }
   return TLB[i];
 }
@@ -111,9 +129,21 @@ void updateTLB(Address* addr) {
 }
 
 PageTableEntry* getPageTableEntry() {
-  int i = 0;
-  while (pageTable[i]->log_page != 0) {
+  unsigned int i = 0;
+  while (i < pageTable.size() && pageTable[i]->log_page != 0) {
     i++;
+  }
+  if (i == pageTable.size()) {
+    int removed = 0;
+    unsigned int high_priority = 0;
+    for (i = 0; i < pageTable.size(); i++) {
+      if(pageTable[i]->priority > high_priority) {
+        removed = i;
+      }
+    }
+  }
+  if (pra == LRU) {
+    pageTable[i]->priority = 0;
   }
   return pageTable[i];
 }
@@ -153,46 +183,36 @@ bool isInPageTable(Address* addr) {
   return false;
 }
 
+void printAddress(Address* my_addr) {
+  //printf("%d %d %d\n", my_addr->address, my_addr->page,
+  //  my_addr->offset);
+  //printf("full address; value; phsymem frame number; content of entire frame;\n");
+  printf("%d, %d, %d, ", my_addr->address, my_addr->value, my_addr->frame_index);
+  //for (int i = 0; i < PAGE_SIZE; i++) {
+  //  printf("%x", (int) (*(unsigned char*) my_addr->frame+i));
+  //}
+  printf("\n");
+}
 
 void printResults() {
   page_fault_rate = page_faults / (page_faults + page_hits);
   tlb_miss_rate = tlb_misses / (tlb_hits + tlb_misses);
   unsigned int index = 0;
   while (index < addresses.size()) {
-    Address* my_addr = addresses[index];
-    //printf("%d %d %d\n", my_addr->address, my_addr->page,
-    //  my_addr->offset);
-    //printf("full address; value; phsymem frame number; content of entire frame;\n");
-    printf("%d, %d, %d, ", my_addr->address, my_addr->value, my_addr->frame_index);
-    //for (int i = 0; i < PAGE_SIZE; i++) {
-    //  printf("%x", (int) (*(unsigned char*) my_addr->frame+i));
-    //}
-    printf("\n");
+    printAddress(addresses[index]);
     index++;
   }
   printf("Page Faults: %d, Page Fault Rate: %f\n", page_faults, page_fault_rate);
   printf("TLB Hits: %d, TLB Misses: %d, TLB Miss Rate: %f\n", tlb_hits, tlb_misses, tlb_miss_rate);
 }
 
-void cleanup() {
-  cleanTLB();
-  cleanPageTable();
-  cleanPhysMem();
-}
-
-void cleanTLB() {
-  for (int i = 0; i < TLB_SIZE; i++) {
-    delete TLB[i];
-  }
-}
-
-void cleanPageTable() {
+void clean() {
   for (int i = 0; i < PAGE_TABLE_SIZE; i++) {
     delete pageTable[i];
   }
-}
-
-void cleanPhysMem() {
+  for (int i = 0; i < TLB_SIZE; i++) {
+    delete TLB[i];
+  }
   for (int i = 0; i < frames; i++) {
     delete physMem[i];
   }
@@ -236,5 +256,5 @@ int main(int argc, char** argv) {
   fillAddresses(argv[1]);
   lookupAddress();
   printResults();
-  cleanup();
+  clean();
 }

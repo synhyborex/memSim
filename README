@@ -1,1 +1,2 @@
 Luke Plewa
+This program supports fifo and lru algorithms, but not opt page replacement algorithm.
