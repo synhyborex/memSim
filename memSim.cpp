@@ -65,6 +65,7 @@ void runAddrs(){
     else {
 
     }
+  }
 }
 
 bool checkTLB(Address* addr) {
@@ -129,10 +130,12 @@ int main(int argc, char** argv) {
       frames = NUM_FRAMES;
       pra = FIFO;
       break;
+
     case 3:
       frames = strtol(argv[2], NULL, 10);
       pra = FIFO;
       break;
+
     case 4:
       frames = strtol(argv[2], NULL, 10);
       if(!strcmp(argv[3], "fifo"))
@@ -142,10 +145,11 @@ int main(int argc, char** argv) {
       else if(!strcmp(argv[3], "opt"))
         pra = OPT;
       else{
-        cout << "Invalid PRA. Algorithm defaulted to FIFO." << endl;
+        cout << "Invalid PRA." << endl;
         pra = FIFO;
       }
       break;
+
     default:
       cout << "Invalid command line input." << endl;
       exit(EXIT_SUCCESS);
