@@ -29,14 +29,16 @@ class Address {
       frameNum = 0;
       frame = (char*) malloc(PAGE_SIZE*sizeof(char));
     }
-    ~Address(){}
+    ~Address(){
+      free(frame);
+    }
+
     int page;
     int offset;
     int address;
     int value;
     int frameNum;
     char* frame;
-  private:
 };
 
 class TLBEntry {
@@ -49,9 +51,6 @@ class TLBEntry {
 
     unsigned char logicalPage;
     unsigned char physFrame;
-
-  private:
-
 };
 
 class PageTableEntry {
@@ -66,9 +65,6 @@ class PageTableEntry {
     unsigned char valid;
     unsigned char logicalPage;
     unsigned char physFrame;
-
-  private:
-
 };
 
 class PhysMemFrame {
@@ -82,9 +78,6 @@ class PhysMemFrame {
     }
 
     unsigned char* frame; //fixed size 256 bytes
-
-  private:
-
 };
 
 //functions
@@ -103,6 +96,10 @@ extern void my_run();
 extern bool checkTLB(Address* addr);
 extern bool checkPageTable(Address* addr);
 extern void pageFault(int index);
+extern void updatePageTable(Address* addr);
+extern void updateTLB(Address* addr);
+extern TLBEntry* getTLBEntry();
+extern PageTableEntry* getPageTableEntry();
 extern void printResults();
 
 std::vector<TLBEntry*> TLB;
